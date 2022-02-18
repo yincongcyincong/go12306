@@ -1,6 +1,6 @@
 .idea
 12306
-*.png
+conf/*.png
 *.DS_Store
 *.log
 *cookie
