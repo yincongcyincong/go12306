@@ -78,7 +78,7 @@ func getTrainInfo(searchParam *module.SearchParam, i int, trainMap map[string]bo
 	var trainData *module.TrainData
 
 	// 一分钟进行一次自动登陆
-	if i%30 == 0 {
+	if i%60 == 0 {
 		err = GetLoginData()
 		if err != nil {
 			seelog.Errorf("自动登陆失败：%v", err)
@@ -118,6 +118,10 @@ func getTrainInfo(searchParam *module.SearchParam, i int, trainMap map[string]bo
 		seelog.Info("暂无车票可以购买")
 		return nil, errors.New("暂无车票可以购买")
 	}
+
+	// 如果在晚上11点到早上5点之间，停止抢票，只自动登陆
+	waitToOrder()
+
 	return trainData, nil
 }
 
@@ -243,4 +247,23 @@ func startOrder(searchParam *module.SearchParam, trainData *module.TrainData, pa
 
 	seelog.Infof("购买成功，订单号：%s", orderWaitRes.Data.OrderId)
 	return nil
+}
+
+func waitToOrder() {
+	if time.Now().Hour() >= 23 || time.Now().Hour() <= 4 {
+		ticker := time.Tick(2 * time.Minute)
+		for {
+			if 5 <= time.Now().Hour() && time.Now().Hour() < 23 {
+				break
+			}
+
+			select {
+			case <-ticker:
+				err := GetLoginData()
+				if err != nil {
+					seelog.Errorf("自动登陆失败：%v", err)
+				}
+			}
+		}
+	}
 }

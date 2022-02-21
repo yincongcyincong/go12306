@@ -12,6 +12,7 @@ import (
 	"github.com/tools/12306/view"
 	"log"
 	"net/http"
+	_ "net/http/pprof"
 	"strconv"
 	"time"
 )
@@ -50,7 +51,7 @@ func initCookieInfo() {
 
 	railExpStr := utils.GetCookieVal("RAIL_EXPIRATION")
 	railExp, _ := strconv.Atoi(railExpStr)
-	if railExp <= int(time.Now().Unix() * 1000) {
+	if railExp <= int(time.Now().Unix()*1000) {
 		seelog.Info("开始重新获取设备信息")
 		utils.GetDeviceInfo()
 
