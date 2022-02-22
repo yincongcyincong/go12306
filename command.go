@@ -78,10 +78,6 @@ func getTrainInfo(searchParam *module.SearchParam, i int, trainMap map[string]bo
 	if i%60 == 0 {
 		if !CheckLogin() {
 			seelog.Errorf("登陆状态为未登陆")
-			err = GetLoginData()
-			if err != nil {
-				seelog.Errorf("自动登陆失败：%v", err)
-			}
 		} else {
 			seelog.Info("登陆状态为登陆中")
 		}

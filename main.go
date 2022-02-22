@@ -67,35 +67,7 @@ func initCookieInfo() {
 	}
 }
 
-func gracefulStop() {
-	sigs := make(chan os.Signal, 1)
-	signal.Notify(sigs, syscall.SIGINT)
-	<-sigs
-
-	seelog.Info("用户登出")
-	LoginOut()
-}
-
-func main() {
-
-	flag.Parse()
-
-	conf.InitConf()
-	utils.InitBlacklist()
-	go gracefulStop()
-
-	switch *runType {
-	case "web":
-		initLog(`<file path="log/log.log"/>`)
-		initCookieInfo()
-		go utils.InitAvailableCDN()
-	default:
-		initLog(`<console/>`)
-		initCookieInfo()
-		go utils.InitAvailableCDN()
-		go CommandStart()
-	}
-
+func initHttp() {
 	http.HandleFunc("/create-image", CreateImageReq)
 	http.HandleFunc("/login", QrLoginReq)
 	http.HandleFunc("/logout", UserLogoutReq)
@@ -110,6 +82,36 @@ func main() {
 	http.HandleFunc("/send-msg", SendMsg)
 	if err := http.ListenAndServe(":28178", nil); err != nil {
 		log.Panicln(err)
+	}
+}
+
+func main() {
+
+	flag.Parse()
+
+	conf.InitConf()
+	utils.InitBlacklist()
+
+	switch *runType {
+	case "web":
+		initLog(`<file path="log/log.log"/>`)
+		initCookieInfo()
+		go utils.InitAvailableCDN()
+	default:
+		initLog(`<console/>`)
+		initCookieInfo()
+		go utils.InitAvailableCDN()
+		go CommandStart()
+	}
+
+	go initHttp()
+
+	sigs := make(chan os.Signal, 1)
+	signal.Notify(sigs, syscall.SIGINT)
+	select {
+	case <-sigs:
+		seelog.Info("用户登出")
+		LoginOut()
 	}
 }
 
