@@ -13,7 +13,10 @@ import (
 	"log"
 	"net/http"
 	_ "net/http/pprof"
+	"os"
+	"os/signal"
 	"strconv"
+	"syscall"
 	"time"
 )
 
@@ -64,22 +67,32 @@ func initCookieInfo() {
 	}
 }
 
+func gracefulStop() {
+	sigs := make(chan os.Signal, 1)
+	signal.Notify(sigs, syscall.SIGINT)
+	<-sigs
+
+	seelog.Info("用户登出")
+	LoginOut()
+}
+
 func main() {
 
 	flag.Parse()
 
 	conf.InitConf()
 	utils.InitBlacklist()
+	go gracefulStop()
 
 	switch *runType {
 	case "web":
 		initLog(`<file path="log/log.log"/>`)
 		initCookieInfo()
-		utils.InitAvailableCDN()
+		go utils.InitAvailableCDN()
 	default:
 		initLog(`<console/>`)
 		initCookieInfo()
-		utils.InitAvailableCDN()
+		go utils.InitAvailableCDN()
 		go CommandStart()
 	}
 

@@ -37,7 +37,7 @@ func CommandStart() {
 			break
 		}
 
-		time.Sleep(5 * time.Second)
+		time.Sleep(7 * time.Second)
 	}
 
 	// 开始轮训买票
@@ -63,12 +63,9 @@ Search:
 		goto Search
 	}
 
-	// 购买完成后自动退出登陆，避免出现多次登陆的情况
-	GetLoginData()
-	LoginOut()
-
-	notice.SendWxrootMessage(*wxrobot, fmt.Sprintf("车次：%s 购买成功, 请登陆12306查看", trainData.TrainNo))
-
+	if *wxrobot != "" {
+		notice.SendWxrootMessage(*wxrobot, fmt.Sprintf("车次：%s 购买成功, 请登陆12306查看", trainData.TrainNo))
+	}
 }
 
 func getTrainInfo(searchParam *module.SearchParam, i int, trainMap map[string]bool, seatSlice []string) (*module.TrainData, error) {
@@ -79,9 +76,14 @@ func getTrainInfo(searchParam *module.SearchParam, i int, trainMap map[string]bo
 
 	// 一分钟进行一次自动登陆
 	if i%60 == 0 {
-		err = GetLoginData()
-		if err != nil {
-			seelog.Errorf("自动登陆失败：%v", err)
+		if !CheckLogin() {
+			seelog.Errorf("登陆状态为未登陆")
+			err = GetLoginData()
+			if err != nil {
+				seelog.Errorf("自动登陆失败：%v", err)
+			}
+		} else {
+			seelog.Info("登陆状态为登陆中")
 		}
 	}
 

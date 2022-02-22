@@ -133,15 +133,6 @@ func GetLoginData() error {
 	}
 	seelog.Infof("%s 登陆成功", apiRes.Data["user_name"])
 
-	// 获取查询或者的query url
-	confRes := new(module.InitConfRes)
-	err = utils.Request(data.Encode(), utils.GetCookieStr(), "https://kyfw.12306.cn/otn/login/conf", confRes, nil)
-	if err != nil {
-		seelog.Error(err)
-		return err
-	}
-	conf.QueryUrl = confRes.Data.QueryUrl
-
 	// 获取特殊cookie字段
 	staticTk := new(module.TkRes)
 	err = utils.Request(data.Encode(), utils.GetCookieStr(), "https://kyfw.12306.cn/passport/web/auth/uamtk-static", staticTk, nil)
@@ -149,8 +140,28 @@ func GetLoginData() error {
 		seelog.Error(err)
 		return err
 	}
+	utils.AddCookie(map[string]string{"tk": staticTk.Newapptk})
+
+	if !CheckLogin() {
+		return errors.New("自动登陆失败！")
+	}
 
 	return nil
+}
+
+func CheckLogin() bool {
+	// 获取查询或者的query url
+	data := make(url.Values)
+	data.Set("_json_att", "")
+	confRes := new(module.InitConfRes)
+	err := utils.Request(data.Encode(), utils.GetCookieStr(), "https://kyfw.12306.cn/otn/login/conf", confRes, nil)
+	if err != nil {
+		seelog.Error(err)
+		return false
+	}
+	conf.QueryUrl = confRes.Data.QueryUrl
+
+	return confRes.Data.IsLogin == "Y"
 }
 
 func LoginOut() error {
