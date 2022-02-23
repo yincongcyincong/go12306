@@ -153,8 +153,6 @@ func CheckUser() error {
 	if !res.Data.Flag {
 		seelog.Errorf("check user fail: %+v", res)
 		return errors.New("check user fail")
-	} else {
-		seelog.Info("check user success")
 	}
 	return nil
 

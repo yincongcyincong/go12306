@@ -24,6 +24,13 @@ var availableCDN = &AvailableCDN{
 }
 
 func InitAvailableCDN() {
+	defer func() {
+		if err := recover(); err != nil {
+			seelog.Error(err)
+			seelog.Flush()
+		}
+	}()
+
 	num := (len(conf.CDNs) / availableCDN.currency) + 1
 	for i := 0; i < num; i++ {
 		availableCDN.wg.Add(1)
@@ -35,6 +42,13 @@ func InitAvailableCDN() {
 		}
 
 		go func(cdns []string) {
+			defer func() {
+				if err := recover(); err != nil {
+					seelog.Error(err)
+					seelog.Flush()
+				}
+			}()
+
 			defer availableCDN.wg.Done()
 			for _, cdn := range cdns {
 				err := RequestGetWithCDN(GetCookieStr(), "https://kyfw.12306.cn/otn/dynamicJs/omseuuq", nil, nil, cdn)

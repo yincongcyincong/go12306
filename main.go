@@ -68,6 +68,13 @@ func initCookieInfo() {
 }
 
 func initHttp() {
+	defer func() {
+		if err := recover(); err != nil {
+			seelog.Error(err)
+			seelog.Flush()
+		}
+	}()
+
 	http.HandleFunc("/create-image", CreateImageReq)
 	http.HandleFunc("/login", QrLoginReq)
 	http.HandleFunc("/logout", UserLogoutReq)

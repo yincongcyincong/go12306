@@ -14,6 +14,7 @@ import (
 )
 
 var client *http.Client
+var cdnMap = make(map[string]*http.Client)
 
 func GetClient() *http.Client {
 	if client == nil {
@@ -37,22 +38,26 @@ func GetClient() *http.Client {
 }
 
 func GetCdnClient(cdn string) *http.Client {
-	return &http.Client{
-		Transport: &http.Transport{
-			DialContext: func(ctx context.Context, network, addr string) (net.Conn, error) {
-				addr = cdn + ":443"
-				return (&net.Dialer{
-					Timeout:   5 * time.Second,
-					KeepAlive: 1 * time.Minute,
-				}).DialContext(ctx, network, addr)
+	if _, ok := cdnMap[cdn]; !ok {
+		cdnMap[cdn] = &http.Client{
+			Transport: &http.Transport{
+				DialContext: func(ctx context.Context, network, addr string) (net.Conn, error) {
+					addr = cdn + ":443"
+					return (&net.Dialer{
+						Timeout:   5 * time.Second,
+						KeepAlive: 1 * time.Minute,
+					}).DialContext(ctx, network, addr)
+				},
+				TLSHandshakeTimeout:   5 * time.Second,
+				ResponseHeaderTimeout: 5 * time.Second,
+				ExpectContinueTimeout: 1 * time.Second,
+				MaxIdleConnsPerHost:   20,
+				IdleConnTimeout:       10 * time.Second,
 			},
-			TLSHandshakeTimeout:   5 * time.Second,
-			ResponseHeaderTimeout: 5 * time.Second,
-			ExpectContinueTimeout: 1 * time.Second,
-			MaxIdleConnsPerHost:   20,
-			IdleConnTimeout:       10 * time.Second,
-		},
+		}
 	}
+
+	return cdnMap[cdn]
 }
 
 func Request(data string, cookieStr, url string, res interface{}, headers map[string]string) error {

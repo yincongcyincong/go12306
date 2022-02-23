@@ -14,6 +14,13 @@ import (
 )
 
 func CommandStart() {
+	defer func() {
+		if err := recover(); err != nil {
+			seelog.Error(err)
+			seelog.Flush()
+		}
+	}()
+
 	var err error
 	if err = GetLoginData(); err != nil {
 		qrImage, err := CreateImage()
@@ -29,6 +36,9 @@ func CommandStart() {
 			return
 		}
 	}
+
+	go startCheckLogin()
+
 	searchParam := new(module.SearchParam)
 	var trainStr, seatStr, passengerStr string
 	for i := 1; i < math.MaxInt64; i++ {
@@ -73,15 +83,6 @@ func getTrainInfo(searchParam *module.SearchParam, i int, trainMap map[string]bo
 	var err error
 	searchParam.SeatType = ""
 	var trainData *module.TrainData
-
-	// 一分钟进行一次自动登陆
-	if i%60 == 0 {
-		if !CheckLogin() {
-			seelog.Errorf("登陆状态为未登陆")
-		} else {
-			seelog.Info("登陆状态为登陆中")
-		}
-	}
 
 	trains, err := GetTrainInfo(searchParam)
 	if err != nil {
@@ -257,11 +258,33 @@ func waitToOrder() {
 
 			select {
 			case <-ticker:
-				err := GetLoginData()
-				if err != nil {
-					seelog.Errorf("自动登陆失败：%v", err)
+				if !CheckLogin() {
+					seelog.Errorf("自动登陆失败")
 				}
 			}
 		}
 	}
+}
+
+func startCheckLogin() {
+	go func() {
+		defer func() {
+			if err := recover(); err != nil {
+				seelog.Error(err)
+				seelog.Flush()
+			}
+		}()
+
+		timer := time.NewTicker( 2* time.Minute)
+		for {
+			select {
+			case <-timer.C:
+				if !CheckLogin() {
+					seelog.Errorf("登陆状态为未登陆")
+				} else {
+					seelog.Info("登陆状态为登陆中")
+				}
+			}
+		}
+	}()
 }
