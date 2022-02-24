@@ -1,7 +1,6 @@
 package main
 
 import (
-	"encoding/json"
 	"flag"
 	"fmt"
 	"github.com/cihub/seelog"
@@ -25,9 +24,15 @@ var (
 	wxrobot   = flag.String("wxrobot", "", "企业微信机器人通知")
 	deviceId  = flag.String("device_id", "", "设备id")
 	deviceExp = flag.String("device_exp", "", "设备超时时间")
+	mustDevice = flag.String("must_device", "0", "强制生成设备信息")
 )
 
-func initLog(logType string) {
+func initLog() {
+	logType := `<console/>`
+	if *runType == "web" {
+		logType = `<file path="log/log.log"/>`
+	}
+
 	logger, err := seelog.LoggerFromConfigAsString(`<seelog type="sync" minlevel="info">
     <outputs formatid="main">
         ` + logType + `
@@ -54,17 +59,22 @@ func initCookieInfo() {
 
 	railExpStr := utils.GetCookieVal("RAIL_EXPIRATION")
 	railExp, _ := strconv.Atoi(railExpStr)
-	if railExp <= int(time.Now().Unix()*1000) {
+	if railExp <= int(time.Now().Unix()*1000) || *mustDevice == "1" {
 		seelog.Info("开始重新获取设备信息")
 		utils.GetDeviceInfo()
-
-		if *deviceId != "" && *deviceExp != "" {
-			utils.AddCookie(map[string]string{
-				"RAIL_DEVICEID":   *deviceId,
-				"RAIL_EXPIRATION": *deviceExp,
-			})
-		}
 	}
+
+	if *deviceId != "" && *deviceExp != "" {
+		utils.AddCookie(map[string]string{
+			"RAIL_DEVICEID":   *deviceId,
+			"RAIL_EXPIRATION": *deviceExp,
+		})
+	}
+
+	if utils.GetCookieVal("RAIL_DEVICEID") == "" || utils.GetCookieVal("RAIL_EXPIRATION") == "" {
+		panic("获取设备信息失败")
+	}
+
 }
 
 func initHttp() {
@@ -82,8 +92,6 @@ func initHttp() {
 	http.HandleFunc("/search-info", SearchInfo)
 	http.HandleFunc("/order-view", OrderView)
 	http.HandleFunc("/order", IsLogin(StartOrderReq))
-	http.HandleFunc("/login-process", LoginProcess)
-	http.HandleFunc("/buy-process", BuyProcess)
 	http.HandleFunc("/re-login", ReLogin)
 	http.HandleFunc("/", LoginView)
 	http.HandleFunc("/send-msg", SendMsg)
@@ -96,28 +104,24 @@ func main() {
 
 	flag.Parse()
 
+	initLog()
 	conf.InitConf()
-	utils.InitBlacklist()
+	initCookieInfo()
 
-	switch *runType {
-	case "web":
-		initLog(`<file path="log/log.log"/>`)
-		initCookieInfo()
-		go utils.InitAvailableCDN()
-	default:
-		initLog(`<console/>`)
-		initCookieInfo()
-		go utils.InitAvailableCDN()
+	go utils.InitBlacklist()
+	go utils.InitAvailableCDN()
+	go initHttp()
+
+	if *runType == "command" {
 		go CommandStart()
 	}
-
-	go initHttp()
 
 	sigs := make(chan os.Signal, 1)
 	signal.Notify(sigs, syscall.SIGINT)
 	select {
 	case <-sigs:
 		seelog.Info("用户登出")
+		utils.WriteCookieToFile()
 		LoginOut()
 	}
 }
@@ -304,51 +308,6 @@ func LoginView(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprint(w, view.ViewHtml)
 }
 
-func LoginProcess(w http.ResponseWriter, r *http.Request) {
-	qrImage, err := CreateImage()
-	if err != nil {
-		utils.HTTPFailResp(w, http.StatusInternalServerError, 1, err.Error(), "")
-		return
-	}
-	qrImage.Image = ""
-
-	err = QrLogin(qrImage)
-	if err != nil {
-		utils.HTTPFailResp(w, http.StatusInternalServerError, 1, err.Error(), "")
-		return
-	}
-
-	submitToken, err := GetRepeatSubmitToken()
-	if err != nil {
-		utils.HTTPFailResp(w, http.StatusInternalServerError, 1, err.Error(), "")
-		return
-	}
-
-	passengers, err := GetPassengers(submitToken)
-	if err != nil {
-		utils.HTTPFailResp(w, http.StatusInternalServerError, 1, err.Error(), "")
-		return
-	}
-	fmt.Println(passengers)
-
-	searchParam := &module.SearchParam{
-		TrainDate:       "2022-02-17",
-		FromStation:     "BJP",
-		ToStation:       "TJP",
-		FromStationName: "北京",
-		ToStationName:   "天津",
-		SeatType:        "O",
-	}
-	res, err := GetTrainInfo(searchParam)
-	if err != nil {
-		utils.HTTPFailResp(w, http.StatusInternalServerError, 1, err.Error(), "")
-		return
-	}
-	fmt.Println(res)
-
-	utils.HTTPSuccResp(w, "")
-}
-
 func SendMsg(w http.ResponseWriter, r *http.Request) {
 	err := notice.SendWxrootMessage(*wxrobot, "车票购买成功")
 	if err != nil {
@@ -359,117 +318,3 @@ func SendMsg(w http.ResponseWriter, r *http.Request) {
 	utils.HTTPSuccResp(w, "")
 }
 
-func BuyProcess(w http.ResponseWriter, r *http.Request) {
-	qrImage, err := CreateImage()
-	if err != nil {
-		utils.HTTPFailResp(w, http.StatusInternalServerError, 1, err.Error(), "")
-		return
-	}
-	qrImage.Image = ""
-
-	err = QrLogin(qrImage)
-	if err != nil {
-		utils.HTTPFailResp(w, http.StatusInternalServerError, 1, err.Error(), "")
-		return
-	}
-
-	//submitToken, err := GetRepeatSubmitToken()
-	//if err != nil {
-	//	utils.HTTPFailResp(w, http.StatusInternalServerError, 1, err.Error(), "")
-	//	return
-	//}
-	//
-	//passengers, err := GetPassengers(submitToken)
-	//if err != nil {
-	//	utils.HTTPFailResp(w, http.StatusInternalServerError, 1, err.Error(), "")
-	//	return
-	//}
-
-	searchParam := &module.SearchParam{
-		TrainDate:       "2022-02-17",
-		FromStation:     "BJP",
-		ToStation:       "TJP",
-		FromStationName: "北京",
-		ToStationName:   "天津",
-		SeatType:        "O",
-	}
-	res, err := GetTrainInfo(searchParam)
-	if err != nil {
-		utils.HTTPFailResp(w, http.StatusInternalServerError, 1, err.Error(), "")
-		return
-	}
-	fmt.Println(fmt.Sprintf("%+v", res[2]))
-
-	orderParam := &module.OrderParam{
-		TrainData:   res[2],
-		SearchParam: searchParam,
-		PassengerMap: map[string]bool{
-			"尹聪": true,
-		},
-	}
-	d, _ := json.Marshal(orderParam)
-	fmt.Println(string(d))
-
-	err = CheckUser()
-	if err != nil {
-		utils.HTTPFailResp(w, http.StatusInternalServerError, 1, err.Error(), "")
-		return
-	}
-
-	err = SubmitOrder(orderParam.TrainData, orderParam.SearchParam)
-	if err != nil {
-		utils.HTTPFailResp(w, http.StatusInternalServerError, 1, err.Error(), "")
-		return
-	}
-
-	submitToken, err := GetRepeatSubmitToken()
-	if err != nil {
-		utils.HTTPFailResp(w, http.StatusInternalServerError, 1, err.Error(), "")
-		return
-	}
-
-	passengers, err := GetPassengers(submitToken)
-	if err != nil {
-		utils.HTTPFailResp(w, http.StatusInternalServerError, 1, err.Error(), "")
-		return
-	}
-	orderParam.Passengers = passengers.Data.NormalPassengers[:1]
-
-	err = CheckOrder(orderParam.Passengers, submitToken, orderParam.SearchParam)
-	if err != nil {
-		utils.HTTPFailResp(w, http.StatusInternalServerError, 1, err.Error(), "")
-		return
-	}
-
-	err = GetQueueCount(submitToken, orderParam.SearchParam)
-	if err != nil {
-		utils.HTTPFailResp(w, http.StatusInternalServerError, 1, err.Error(), "")
-		return
-	}
-
-	err = ConfirmQueue(orderParam.Passengers, submitToken, orderParam.SearchParam)
-	if err != nil {
-		utils.HTTPFailResp(w, http.StatusInternalServerError, 1, err.Error(), "")
-		return
-	}
-
-	var orderWaitRes *module.OrderWaitRes
-	for i := 0; i < 20; i++ {
-		orderWaitRes, err = OrderWait(submitToken)
-		if err != nil {
-			time.Sleep(3 * time.Second)
-			continue
-		}
-		if orderWaitRes.Data.OrderId != "" {
-			break
-		}
-	}
-
-	err = OrderResult(submitToken, orderWaitRes.Data.OrderId)
-	if err != nil {
-		utils.HTTPFailResp(w, http.StatusInternalServerError, 1, err.Error(), "")
-		return
-	}
-
-	utils.HTTPSuccResp(w, "")
-}

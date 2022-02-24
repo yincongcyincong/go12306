@@ -73,6 +73,7 @@ type InitConfRes struct {
 }
 
 type DeviceInfo struct {
-	Exp string `json:"exp"`
-	Dfp string `json:"dfp"`
+	Exp        string `json:"exp"`
+	Dfp        string `json:"dfp"`
+	CookieCode string `json:"cookieCode"`
 }

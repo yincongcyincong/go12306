@@ -136,3 +136,165 @@ package main
 //	}
 //	fmt.Println(string(checkBody))
 //}
+
+
+//func BuyProcess(w http.ResponseWriter, r *http.Request) {
+//	qrImage, err := CreateImage()
+//	if err != nil {
+//		utils.HTTPFailResp(w, http.StatusInternalServerError, 1, err.Error(), "")
+//		return
+//	}
+//	qrImage.Image = ""
+//
+//	err = QrLogin(qrImage)
+//	if err != nil {
+//		utils.HTTPFailResp(w, http.StatusInternalServerError, 1, err.Error(), "")
+//		return
+//	}
+//
+//	//submitToken, err := GetRepeatSubmitToken()
+//	//if err != nil {
+//	//	utils.HTTPFailResp(w, http.StatusInternalServerError, 1, err.Error(), "")
+//	//	return
+//	//}
+//	//
+//	//passengers, err := GetPassengers(submitToken)
+//	//if err != nil {
+//	//	utils.HTTPFailResp(w, http.StatusInternalServerError, 1, err.Error(), "")
+//	//	return
+//	//}
+//
+//	searchParam := &module.SearchParam{
+//		TrainDate:       "2022-02-17",
+//		FromStation:     "BJP",
+//		ToStation:       "TJP",
+//		FromStationName: "北京",
+//		ToStationName:   "天津",
+//		SeatType:        "O",
+//	}
+//	res, err := GetTrainInfo(searchParam)
+//	if err != nil {
+//		utils.HTTPFailResp(w, http.StatusInternalServerError, 1, err.Error(), "")
+//		return
+//	}
+//	fmt.Println(fmt.Sprintf("%+v", res[2]))
+//
+//	orderParam := &module.OrderParam{
+//		TrainData:   res[2],
+//		SearchParam: searchParam,
+//		PassengerMap: map[string]bool{
+//			"尹聪": true,
+//		},
+//	}
+//	d, _ := json.Marshal(orderParam)
+//	fmt.Println(string(d))
+//
+//	err = CheckUser()
+//	if err != nil {
+//		utils.HTTPFailResp(w, http.StatusInternalServerError, 1, err.Error(), "")
+//		return
+//	}
+//
+//	err = SubmitOrder(orderParam.TrainData, orderParam.SearchParam)
+//	if err != nil {
+//		utils.HTTPFailResp(w, http.StatusInternalServerError, 1, err.Error(), "")
+//		return
+//	}
+//
+//	submitToken, err := GetRepeatSubmitToken()
+//	if err != nil {
+//		utils.HTTPFailResp(w, http.StatusInternalServerError, 1, err.Error(), "")
+//		return
+//	}
+//
+//	passengers, err := GetPassengers(submitToken)
+//	if err != nil {
+//		utils.HTTPFailResp(w, http.StatusInternalServerError, 1, err.Error(), "")
+//		return
+//	}
+//	orderParam.Passengers = passengers.Data.NormalPassengers[:1]
+//
+//	err = CheckOrder(orderParam.Passengers, submitToken, orderParam.SearchParam)
+//	if err != nil {
+//		utils.HTTPFailResp(w, http.StatusInternalServerError, 1, err.Error(), "")
+//		return
+//	}
+//
+//	err = GetQueueCount(submitToken, orderParam.SearchParam)
+//	if err != nil {
+//		utils.HTTPFailResp(w, http.StatusInternalServerError, 1, err.Error(), "")
+//		return
+//	}
+//
+//	err = ConfirmQueue(orderParam.Passengers, submitToken, orderParam.SearchParam)
+//	if err != nil {
+//		utils.HTTPFailResp(w, http.StatusInternalServerError, 1, err.Error(), "")
+//		return
+//	}
+//
+//	var orderWaitRes *module.OrderWaitRes
+//	for i := 0; i < 20; i++ {
+//		orderWaitRes, err = OrderWait(submitToken)
+//		if err != nil {
+//			time.Sleep(3 * time.Second)
+//			continue
+//		}
+//		if orderWaitRes.Data.OrderId != "" {
+//			break
+//		}
+//	}
+//
+//	err = OrderResult(submitToken, orderWaitRes.Data.OrderId)
+//	if err != nil {
+//		utils.HTTPFailResp(w, http.StatusInternalServerError, 1, err.Error(), "")
+//		return
+//	}
+//
+//	utils.HTTPSuccResp(w, "")
+//}
+
+
+//func LoginProcess(w http.ResponseWriter, r *http.Request) {
+//	qrImage, err := CreateImage()
+//	if err != nil {
+//		utils.HTTPFailResp(w, http.StatusInternalServerError, 1, err.Error(), "")
+//		return
+//	}
+//	qrImage.Image = ""
+//
+//	err = QrLogin(qrImage)
+//	if err != nil {
+//		utils.HTTPFailResp(w, http.StatusInternalServerError, 1, err.Error(), "")
+//		return
+//	}
+//
+//	submitToken, err := GetRepeatSubmitToken()
+//	if err != nil {
+//		utils.HTTPFailResp(w, http.StatusInternalServerError, 1, err.Error(), "")
+//		return
+//	}
+//
+//	passengers, err := GetPassengers(submitToken)
+//	if err != nil {
+//		utils.HTTPFailResp(w, http.StatusInternalServerError, 1, err.Error(), "")
+//		return
+//	}
+//	fmt.Println(passengers)
+//
+//	searchParam := &module.SearchParam{
+//		TrainDate:       "2022-02-17",
+//		FromStation:     "BJP",
+//		ToStation:       "TJP",
+//		FromStationName: "北京",
+//		ToStationName:   "天津",
+//		SeatType:        "O",
+//	}
+//	res, err := GetTrainInfo(searchParam)
+//	if err != nil {
+//		utils.HTTPFailResp(w, http.StatusInternalServerError, 1, err.Error(), "")
+//		return
+//	}
+//	fmt.Println(res)
+//
+//	utils.HTTPSuccResp(w, "")
+//}

@@ -10,11 +10,13 @@ import (
 	"net"
 	"net/http"
 	"strings"
+	"sync"
 	"time"
 )
 
 var client *http.Client
 var cdnMap = make(map[string]*http.Client)
+var cdnLock = sync.Mutex{}
 
 func GetClient() *http.Client {
 	if client == nil {
@@ -27,7 +29,7 @@ func GetClient() *http.Client {
 				TLSHandshakeTimeout:   5 * time.Second,
 				ResponseHeaderTimeout: 5 * time.Second,
 				ExpectContinueTimeout: 1 * time.Second,
-				MaxIdleConnsPerHost:   20,
+				MaxIdleConnsPerHost:   50,
 				IdleConnTimeout:       10 * time.Second,
 			},
 		}
@@ -38,18 +40,21 @@ func GetClient() *http.Client {
 }
 
 func GetCdnClient(cdn string) *http.Client {
+	cdnLock.Lock()
+	defer cdnLock.Unlock()
 	if _, ok := cdnMap[cdn]; !ok {
+
 		cdnMap[cdn] = &http.Client{
 			Transport: &http.Transport{
 				DialContext: func(ctx context.Context, network, addr string) (net.Conn, error) {
 					addr = cdn + ":443"
 					return (&net.Dialer{
-						Timeout:   5 * time.Second,
+						Timeout:   1 * time.Second,
 						KeepAlive: 1 * time.Minute,
 					}).DialContext(ctx, network, addr)
 				},
-				TLSHandshakeTimeout:   5 * time.Second,
-				ResponseHeaderTimeout: 5 * time.Second,
+				TLSHandshakeTimeout:   1 * time.Second,
+				ResponseHeaderTimeout: 1 * time.Second,
 				ExpectContinueTimeout: 1 * time.Second,
 				MaxIdleConnsPerHost:   20,
 				IdleConnTimeout:       10 * time.Second,
@@ -57,7 +62,8 @@ func GetCdnClient(cdn string) *http.Client {
 		}
 	}
 
-	return cdnMap[cdn]
+	c := cdnMap[cdn]
+	return c
 }
 
 func Request(data string, cookieStr, url string, res interface{}, headers map[string]string) error {

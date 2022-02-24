@@ -68,7 +68,7 @@ func GetDeviceInfo() {
 	//data.Set("timestamp", strconv.Itoa(int(time.Now().Unix()*1000)))
 	//data.Set("algID", algId)
 
-	body, err := RequestGetWithoutJson("", "https://kyfw.12306.cn/otn/HttpZF/logdevice?algID=RIDHI4lwVc&hashCode=poCfmRpmqhUQgstjUiYaEHOm0C45-1kr9Jxufr1IERM&FMQw=0&q4f3=zh-CN&VPIf=1&custID=133&VEek=unknown&dzuS=0&yD16=0&EOQP=c227b88b01f5c513710d4b9f16a5ce52&jp76=fe9c964a38174deb6891b6523b8e4518&hAqN=MacIntel&platform=WEB&ks0Q=1412399caf7126b9506fee481dd0a407&TeRS=797x1440&tOHY=30xx900x1440&Fvje=i1l1o1s1&q5aJ=-8&wNLf=99115dfb07133750ba677d055874de87&0aew=Mozilla/5.0%20(Macintosh;%20Intel%20Mac%20OS%20X%2010_15_7)%20AppleWebKit/537.36%20(KHTML,%20like%20Gecko)%20Chrome/98.0.4758.80%20Safari/537.36&E3gR=d2fe1651505286919ec11ddcdcb58cfd&timestamp="+strconv.Itoa(int(time.Now().Unix()*1000)), nil)
+	body, err := RequestGetWithoutJson("", "https://kyfw.12306.cn/otn/HttpZF/logdevice?algID=kPKMh0v14R&hashCode=QVOG5ISqfjYPBVzD1nZK3tWxd-vJH_lBCmgRi1DJYsU&FMQw=0&q4f3=zh-CN&VPIf=1&custID=133&VEek=unknown&dzuS=0&yD16=0&EOQP=c227b88b01f5c513710d4b9f16a5ce52&jp76=fe9c964a38174deb6891b6523b8e4518&hAqN=MacIntel&platform=WEB&ks0Q=1412399caf7126b9506fee481dd0a407&TeRS=794x1440&tOHY=30xx900x1440&Fvje=i1l1o1s1&q5aJ=-8&wNLf=99115dfb07133750ba677d055874de87&0aew=Mozilla/5.0%20(Macintosh;%20Intel%20Mac%20OS%20X%2010_15_7)%20AppleWebKit/537.36%20(KHTML,%20like%20Gecko)%20Chrome/98.0.4758.102%20Safari/537.36&E3gR=6830b7871c4d4d53e2c64935d267dda8&timestamp="+strconv.Itoa(int(time.Now().Unix()*1000)), nil)
 	if err != nil {
 		seelog.Error(err)
 		return
@@ -82,6 +82,11 @@ func GetDeviceInfo() {
 			seelog.Error(err)
 			return
 		}
+		if deviceInfo.CookieCode == "" {
+			seelog.Error("生成device信息失败, 请通过启动参数手动设置device信息")
+			return
+		}
+
 		cookie.cookie["RAIL_DEVICEID"] = deviceInfo.Dfp
 		cookie.cookie["RAIL_EXPIRATION"] = deviceInfo.Exp
 	}

@@ -37,7 +37,7 @@ func CommandStart() {
 		}
 	}
 
-	go startCheckLogin()
+	startCheckLogin()
 
 	searchParam := new(module.SearchParam)
 	var trainStr, seatStr, passengerStr string
@@ -275,7 +275,8 @@ func startCheckLogin() {
 			}
 		}()
 
-		timer := time.NewTicker( 2* time.Minute)
+		timer := time.NewTicker(2 * time.Minute)
+		alTimer := time.NewTicker(15 * time.Minute)
 		for {
 			select {
 			case <-timer.C:
@@ -284,6 +285,11 @@ func startCheckLogin() {
 				} else {
 					seelog.Info("登陆状态为登陆中")
 				}
+			case <-alTimer.C:
+					err := GetLoginData()
+					if err != nil {
+						seelog.Errorf("自动登陆失败：%v", err)
+					}
 			}
 		}
 	}()
