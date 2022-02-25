@@ -22,8 +22,6 @@ import (
 var (
 	runType   = flag.String("run_type", "command", "command: 命令行模式，web：网页模式")
 	wxrobot   = flag.String("wxrobot", "", "企业微信机器人通知")
-	deviceId  = flag.String("device_id", "", "设备id")
-	deviceExp = flag.String("device_exp", "", "设备超时时间")
 	mustDevice = flag.String("must_device", "0", "强制生成设备信息")
 )
 
@@ -62,13 +60,6 @@ func initCookieInfo() {
 	if railExp <= int(time.Now().Unix()*1000) || *mustDevice == "1" {
 		seelog.Info("开始重新获取设备信息")
 		utils.GetDeviceInfo()
-	}
-
-	if *deviceId != "" && *deviceExp != "" {
-		utils.AddCookie(map[string]string{
-			"RAIL_DEVICEID":   *deviceId,
-			"RAIL_EXPIRATION": *deviceExp,
-		})
 	}
 
 	if utils.GetCookieVal("RAIL_DEVICEID") == "" || utils.GetCookieVal("RAIL_EXPIRATION") == "" {

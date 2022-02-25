@@ -208,6 +208,8 @@ func RequestGetWithCDN(cookieStr, url string, res interface{}, headers map[strin
 		return err
 	}
 
+	seelog.Tracef("url: %v, response: %v, cdn: %s", url, string(respBody), cdn)
+
 	if res != nil {
 		err = json.Unmarshal(respBody, res)
 		if err != nil {
@@ -219,7 +221,6 @@ func RequestGetWithCDN(cookieStr, url string, res interface{}, headers map[strin
 	setCookies := resp.Header.Values("Set-Cookie")
 	AddCookieStr(setCookies)
 
-	seelog.Tracef("url: %v, response: %v, cdn: %s", url, string(respBody[:500]), cdn)
 
 	return nil
 }
