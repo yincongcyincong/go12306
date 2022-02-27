@@ -107,6 +107,8 @@ func main() {
 		go CommandStart()
 	}
 
+	//fmt.Println(utils.CreateLogDeviceParam().Encode())
+
 	sigs := make(chan os.Signal, 1)
 	signal.Notify(sigs, syscall.SIGINT)
 	select {

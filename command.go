@@ -47,7 +47,7 @@ func CommandStart() {
 			break
 		}
 
-		time.Sleep(7 * time.Second)
+		time.Sleep(5 * time.Second)
 	}
 
 	// 开始轮训买票
@@ -58,11 +58,11 @@ func CommandStart() {
 Search:
 	var trainData *module.TrainData
 	for i := 0; i < math.MaxInt64; i++ {
-		trainData, err = getTrainInfo(searchParam, i, trainMap, seatSlice)
+		trainData, err = getTrainInfo(searchParam, trainMap, seatSlice)
 		if err == nil {
 			break
 		} else {
-			time.Sleep(2 * time.Second)
+			time.Sleep(time.Duration(utils.GetRand(1500, 4000)) * time.Millisecond)
 		}
 	}
 
@@ -78,7 +78,7 @@ Search:
 	}
 }
 
-func getTrainInfo(searchParam *module.SearchParam, i int, trainMap map[string]bool, seatSlice []string) (*module.TrainData, error) {
+func getTrainInfo(searchParam *module.SearchParam, trainMap map[string]bool, seatSlice []string) (*module.TrainData, error) {
 
 	var err error
 	searchParam.SeatType = ""
@@ -102,6 +102,7 @@ func getTrainInfo(searchParam *module.SearchParam, i int, trainMap map[string]bo
 				if t.SeatInfo[s] != "" && t.SeatInfo[s] != "无" {
 					trainData = t
 					searchParam.SeatType = conf.OrderSeatType[s]
+					seelog.Infof("%s %s 数量: %s", t.TrainNo, s, t.SeatInfo[s])
 					break
 				}
 				seelog.Infof("%s %s 数量: %s", t.TrainNo, s, t.SeatInfo[s])
@@ -221,10 +222,10 @@ func startOrder(searchParam *module.SearchParam, trainData *module.TrainData, pa
 	}
 
 	var orderWaitRes *module.OrderWaitRes
-	for i := 0; i < 12; i++ {
+	for i := 0; i < 20; i++ {
 		orderWaitRes, err = OrderWait(submitToken)
 		if err != nil {
-			time.Sleep(5 * time.Second)
+			time.Sleep(7 * time.Second)
 			continue
 		}
 		if orderWaitRes.Data.OrderId != "" {
@@ -250,18 +251,13 @@ func startOrder(searchParam *module.SearchParam, trainData *module.TrainData, pa
 
 func waitToOrder() {
 	if time.Now().Hour() >= 23 || time.Now().Hour() <= 4 {
-		ticker := time.Tick(2 * time.Minute)
+
 		for {
 			if 5 <= time.Now().Hour() && time.Now().Hour() < 23 {
 				break
 			}
 
-			select {
-			case <-ticker:
-				if !CheckLogin() {
-					seelog.Errorf("自动登陆失败")
-				}
-			}
+			time.Sleep(1 * time.Minute)
 		}
 	}
 }
@@ -286,10 +282,10 @@ func startCheckLogin() {
 					seelog.Info("登陆状态为登陆中")
 				}
 			case <-alTimer.C:
-					err := GetLoginData()
-					if err != nil {
-						seelog.Errorf("自动登陆失败：%v", err)
-					}
+				err := GetLoginData()
+				if err != nil {
+					seelog.Errorf("自动登陆失败：%v", err)
+				}
 			}
 		}
 	}()

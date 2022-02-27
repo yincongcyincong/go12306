@@ -2,12 +2,16 @@ package utils
 
 import (
 	"bytes"
+	"crypto/sha256"
+	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"github.com/cihub/seelog"
+	"github.com/tools/12306/conf"
 	"github.com/tools/12306/module"
 	"io/fs"
 	"io/ioutil"
+	"net/url"
 	"regexp"
 	"strconv"
 	"strings"
@@ -21,7 +25,7 @@ type cookieInfo struct {
 }
 
 var (
-	cookie  = &cookieInfo{
+	cookie = &cookieInfo{
 		cookie: make(map[string]string),
 		lock:   sync.Mutex{},
 	}
@@ -153,4 +157,120 @@ func ReadCookieFromFile() error {
 
 	AddCookieStr([]string{string(cookieByte)})
 	return nil
+}
+
+func CreateLogDeviceParam() url.Values {
+	//body, err := RequestGetWithoutJson("", "https://kyfw.12306.cn/otn/HttpZF/GetJS", nil)
+	//if err != nil {
+	//	seelog.Error(err)
+	//	return nil
+	//}
+	//
+	//matchData := AlgIDRe.FindSubmatch(body)
+	//if len(matchData) < 2 {
+	//	seelog.Error("get algID fail")
+	//	return nil
+	//}
+	//algId := strings.TrimLeft(string(matchData[1]), `\x3d`)
+	//algId = strings.TrimRight(algId, `\`)
+
+	token := ""
+	data := url.Values{}
+	token += "browserLanguagezh-CN"
+	data.Set(getDeviceParam("browserLanguage"), "zh-CN")
+	token += "cookieEnabled1"
+	data.Set(getDeviceParam("cookieEnabled"), "1")
+	token += "custID133"
+	data.Set(getDeviceParam("custID"), "133")
+	token += "doNotTrackunknown"
+	data.Set(getDeviceParam("doNotTrack"), "unknown")
+	token += "flashVersion0"
+	data.Set(getDeviceParam("flashVersion"), "0")
+	token += "javaEnabled0"
+	data.Set(getDeviceParam("javaEnabled"), "0")
+	token += "jsFontsc227b88b01f5c513710d4b9f16a5ce52"
+	data.Set(getDeviceParam("jsFonts"), "c227b88b01f5c513710d4b9f16a5ce52")
+	token += "mimeTypesfe9c964a38174deb6891b6523b8e4518"
+	data.Set(getDeviceParam("mimeTypes"), "fe9c964a38174deb6891b6523b8e4518")
+	token += "osMacIntel"
+	data.Set(getDeviceParam("os"), "MacIntel")
+	token += "platformWEB"
+	data.Set(getDeviceParam("platform"), "WEB")
+	token += "plugins1412399caf7126b9506fee481dd0a407"
+	data.Set(getDeviceParam("plugins"), "d22ca0b81584fbea62237b14bd04c866")
+
+	// todo 需要改为变量
+	token += "scrAvailSize794x1440"
+	data.Set(getDeviceParam("scrAvailSize"), "794x1440")
+	token += "srcScreenSize30xx900x1440"
+	data.Set(getDeviceParam("srcScreenSize"), "30xx900x1440")
+	token += "storeDbi1l1o1s1"
+	data.Set(getDeviceParam("storeDb"), "i1l1o1s1")
+	token += "timeZone-8"
+	data.Set(getDeviceParam("timeZone"), "-8")
+	token += "touchSupport99115dfb07133750ba677d055874de87"
+	data.Set(getDeviceParam("touchSupport"), "99115dfb07133750ba677d055874de87")
+
+	// todo 需要改为变量
+	token += "userAgentMozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/98.0.4758.102 Safari/537.36"
+	data.Set(getDeviceParam("userAgent"), "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/98.0.4758.102 Safari/537.36")
+	token += "webSmartID6830b7871c4d4d53e2c64935d267dda8"
+	data.Set(getDeviceParam("webSmartID"), "6830b7871c4d4d53e2c64935d267dda8")
+
+	data.Set("hashCode", createHashCode(token))
+	data.Set("timestamp", strconv.Itoa(int(time.Now().Unix()*1000)))
+	//data.Set("algID", algId)
+	return data
+}
+
+func getDeviceParam(param string) string {
+	if paramRef, ok := conf.LogDeviceMap[param]; ok {
+		return paramRef
+	}
+
+	return param
+}
+
+func createHashCode(token string) string {
+	tLen := len(token)
+	tf := tLen / 3
+	if tLen%3 != 0 {
+		tf = tLen/3 + 1
+	}
+	if tLen >= 3 {
+		token = token[tf:tf*2] + token[tf*2:tLen] + token[0:tf]
+	}
+
+	// 在处理一次
+	tLen = len(token)
+	tf = tLen / 3
+	if tLen%3 != 0 {
+		tf = tLen/3 + 1
+	}
+	if tLen >= 3 {
+		token = token[tf*2:tLen] + token[0:tf] + token[tf:2*tf]
+	}
+
+	token = encodeToken(token)
+	token = encodeToken(token)
+	token = encodeToken(token)
+
+
+	h := sha256.New()
+	h.Write([]byte(token))
+	base64Token := base64.StdEncoding.EncodeToString(h.Sum(nil))
+	base64Token = strings.Replace(base64Token, "+", "-", -1)
+	base64Token = strings.Replace(base64Token, "/", "_", -1)
+	base64Token = strings.Replace(base64Token, "=", "", -1)
+	fmt.Println(base64Token)
+	return base64Token
+}
+
+func encodeToken(token string)string {
+	tLen := len(token)
+	if tLen%2 == 0 {
+		return token[tLen/2:tLen] + token[0:tLen/2]
+	}
+
+	return token[tLen/2+1:tLen] + token[tLen/2:tLen/2+1] +  token[0:tLen/2]
 }

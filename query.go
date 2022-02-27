@@ -24,9 +24,16 @@ func GetTrainInfo(searchParam *module.SearchParam) ([]*module.TrainData, error) 
 
 	var err error
 	searchRes := new(module.TrainRes)
+	cdn := utils.GetCdn()
+	if utils.InBlackList(cdn) {
+		seelog.Errorf("%s 在小黑屋", cdn)
+		return nil, errors.New("cdn in black list")
+	}
+
 	err = utils.RequestGetWithCDN(utils.GetCookieStr(), fmt.Sprintf("https://kyfw.12306.cn/otn/%s?leftTicketDTO.train_date=%s&leftTicketDTO.from_station=%s&leftTicketDTO.to_station=%s&purpose_codes=ADULT",
-		conf.QueryUrl, searchParam.TrainDate, searchParam.FromStation, searchParam.ToStation), searchRes, nil, utils.GetCdn())
+		conf.QueryUrl, searchParam.TrainDate, searchParam.FromStation, searchParam.ToStation), searchRes, nil, cdn)
 	if err != nil {
+		utils.AddBlackList(cdn)
 		seelog.Error(err)
 		return nil, err
 	}

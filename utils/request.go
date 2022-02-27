@@ -91,6 +91,7 @@ func Request(data string, cookieStr, url string, res interface{}, headers map[st
 	if err != nil {
 		return err
 	}
+	defer resp.Body.Close()
 
 	err = json.Unmarshal(respBody, res)
 	if err != nil {
@@ -132,6 +133,7 @@ func RequestGet(cookieStr, url string, res interface{}, headers map[string]strin
 	if err != nil {
 		return err
 	}
+	defer resp.Body.Close()
 
 	err = json.Unmarshal(respBody, res)
 	if err != nil {
@@ -172,6 +174,7 @@ func RequestGetWithoutJson(cookieStr, url string, headers map[string]string) ([]
 	if err != nil {
 		return []byte{}, err
 	}
+	defer resp.Body.Close()
 
 	// 添加cookie
 	setCookies := resp.Header.Values("Set-Cookie")
@@ -207,6 +210,7 @@ func RequestGetWithCDN(cookieStr, url string, res interface{}, headers map[strin
 	if err != nil {
 		return err
 	}
+	defer resp.Body.Close()
 
 	seelog.Tracef("url: %v, response: %v, cdn: %s", url, string(respBody), cdn)
 

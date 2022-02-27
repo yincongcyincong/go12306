@@ -1,6 +1,7 @@
 package utils
 
 import (
+	"math/rand"
 	"strings"
 )
 
@@ -19,4 +20,12 @@ func ReplaceSpecailChar(str string) string {
 	str = strings.Replace(str, "%29", ")", -1)
 
 	return str
+}
+
+func GetRand(min, max int) int {
+	if min >= max {
+		return max
+	}
+
+	return rand.Intn(max-min) + min
 }
