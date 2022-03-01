@@ -66,6 +66,7 @@ func initCookieInfo() {
 		panic("获取设备信息失败")
 	}
 
+	conf.UserAgent = utils.GetCookieVal("User-Agent")
 }
 
 func initHttp() {
@@ -106,8 +107,6 @@ func main() {
 	if *runType == "command" {
 		go CommandStart()
 	}
-
-	//fmt.Println(utils.CreateLogDeviceParam().Encode())
 
 	sigs := make(chan os.Signal, 1)
 	signal.Notify(sigs, syscall.SIGINT)

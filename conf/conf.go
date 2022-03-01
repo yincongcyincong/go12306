@@ -118,6 +118,7 @@ var (
 		"historyList": "kU5z",
 		"scrColorDepth": "qmyu",
 	}
+	UserAgent = ""
 )
 
 func InitConf() {

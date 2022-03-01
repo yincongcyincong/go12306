@@ -5,3 +5,4 @@ conf/*.png
 *.log
 *cookie
 *cdnlist
+*.js

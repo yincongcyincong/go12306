@@ -37,6 +37,7 @@ const (
 	qaPar      = "Qa("
 	qa2Par     = "127==="
 	raPar      = "Ra("
+	yaPar      = "ya("
 	reversePar = "for(d=a.length-1;0<=d;d--)c+=a.charAt(d)"
 	changePar  = "parseInt(c/2)"
 	encodePar  = "length%2"
@@ -52,29 +53,36 @@ var (
 )
 
 func GetDeviceInfo() {
-
-	body, err := RequestGetWithoutJson("", "https://kyfw.12306.cn/otn/HttpZF/logdevice?algID=kPKMh0v14R&hashCode=QVOG5ISqfjYPBVzD1nZK3tWxd-vJH_lBCmgRi1DJYsU&FMQw=0&q4f3=zh-CN&VPIf=1&custID=133&VEek=unknown&dzuS=0&yD16=0&EOQP=c227b88b01f5c513710d4b9f16a5ce52&jp76=fe9c964a38174deb6891b6523b8e4518&hAqN=MacIntel&platform=WEB&ks0Q=1412399caf7126b9506fee481dd0a407&TeRS=794x1440&tOHY=30xx900x1440&Fvje=i1l1o1s1&q5aJ=-8&wNLf=99115dfb07133750ba677d055874de87&0aew=Mozilla/5.0%20(Macintosh;%20Intel%20Mac%20OS%20X%2010_15_7)%20AppleWebKit/537.36%20(KHTML,%20like%20Gecko)%20Chrome/98.0.4758.102%20Safari/537.36&E3gR=6830b7871c4d4d53e2c64935d267dda8&timestamp="+strconv.Itoa(int(time.Now().Unix()*1000)), nil)
-	if err != nil {
-		seelog.Error(err)
-		return
-	}
-	if bytes.Contains(body, []byte("callbackFunction")) {
-		body = bytes.TrimLeft(body, "callbackFunction('")
-		body = bytes.TrimRight(body, "')")
-		deviceInfo := new(module.DeviceInfo)
-		err = json.Unmarshal(body, deviceInfo)
+	for i := 0; i < 10; i++ {
+		deviceUrl := "https://kyfw.12306.cn/otn/HttpZF/logdevice?" + CreateLogDeviceParam().Encode()
+		body, err := RequestGetWithoutJson("", deviceUrl+"&timestamp="+strconv.Itoa(int(time.Now().Unix()*1000)), nil)
 		if err != nil {
 			seelog.Error(err)
-			return
+			continue
 		}
-		if deviceInfo.CookieCode == "" {
-			seelog.Error("生成device信息失败, 请通过启动参数手动设置device信息")
-			return
-		}
+		time.Sleep(500 * time.Millisecond)
+		if bytes.Contains(body, []byte("callbackFunction")) {
+			body = bytes.TrimLeft(body, "callbackFunction('")
+			body = bytes.TrimRight(body, "')")
+			deviceInfo := new(module.DeviceInfo)
+			err = json.Unmarshal(body, deviceInfo)
+			if err != nil {
+				seelog.Error(err)
+				continue
+			}
+			if deviceInfo.CookieCode == "" {
+				continue
+			}
 
-		cookie.cookie["RAIL_DEVICEID"] = deviceInfo.Dfp
-		cookie.cookie["RAIL_EXPIRATION"] = deviceInfo.Exp
+			// 有数据就是获取成功
+			cookie.cookie["RAIL_DEVICEID"] = deviceInfo.Dfp
+			cookie.cookie["RAIL_EXPIRATION"] = deviceInfo.Exp
+			seelog.Info("获取设备信息成功")
+			return
+		}
 	}
+
+	seelog.Error("生成device信息失败, 请通过启动参数手动设置device信息")
 
 }
 
@@ -195,6 +203,7 @@ func CreateLogDeviceParam() url.Values {
 	webNo := strconv.Itoa(GetRand(5000, 7000))
 	token += "userAgentMozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/98.0." + webNo + ".109 Safari/537.36"
 	data.Set(getDeviceParam("userAgent"), "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/98.0."+webNo+".109 Safari/537.36")
+	AddCookie(map[string]string{"User-Agent": data.Get(getDeviceParam("userAgent"))})
 	token += "webSmartID74a173cc6a9e7335c27eddd372be213a"
 	data.Set(getDeviceParam("webSmartID"), "74a173cc6a9e7335c27eddd372be213a")
 
@@ -216,7 +225,6 @@ func createHashCode(token, body string) string {
 	body = strings.Replace(body, "\n", "", -1)
 	body = strings.Replace(body, "\r", "", -1)
 	matchFunc := hashAlgRe.FindSubmatch([]byte(body))
-	fmt.Println(string(matchFunc[1]))
 
 	parIdx := findParIndex(string(matchFunc[1]))
 	sort.Slice(parIdx, func(i, j int) bool {
@@ -224,7 +232,6 @@ func createHashCode(token, body string) string {
 	})
 
 	for _, par := range parIdx {
-		fmt.Println(fmt.Sprintf("%+v, %s", par, token))
 		switch par.par {
 		case slitPar:
 			token = slitToken(token)
