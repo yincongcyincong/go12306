@@ -113,12 +113,12 @@ func GetQueueCount(submitToken *module.SubmitToken, searchParam *module.SearchPa
 	}
 
 	if !queueRes.Status {
-		return errors.New("购买失败，开启小黑屋")
+		return errors.New("购买失败，排队状态有误")
 	}
 
 	ticketNum, _ := strconv.Atoi(queueRes.Data.Ticket)
 	if queueRes.Data.Ticket != "充足" || ticketNum <= 0 {
-		return errors.New("购买失败，开启小黑屋")
+		return errors.New("购买失败，余票不足")
 	}
 
 	if queueRes.Data.Op2 == "true" {

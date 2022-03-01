@@ -13,6 +13,7 @@ import (
 	"io/ioutil"
 	"net/url"
 	"regexp"
+	"sort"
 	"strconv"
 	"strings"
 	"sync"
@@ -24,53 +25,33 @@ type cookieInfo struct {
 	lock   sync.Mutex
 }
 
+type parIndex struct {
+	par   string
+	index int
+}
+
+const (
+	slitPar    = "parseInt(c/3)+1"
+	sha256Par  = "SHA256("
+	zaPar      = "za("
+	qaPar      = "Qa("
+	qa2Par     = "127==="
+	raPar      = "Ra("
+	reversePar = "for(d=a.length-1;0<=d;d--)c+=a.charAt(d)"
+	changePar  = "parseInt(c/2)"
+	encodePar  = "length%2"
+)
+
 var (
 	cookie = &cookieInfo{
 		cookie: make(map[string]string),
 		lock:   sync.Mutex{},
 	}
-	AlgIDRe = regexp.MustCompile("algID(.*?)x26")
+	AlgIDRe   = regexp.MustCompile("algID(.*?)x26")
+	hashAlgRe = regexp.MustCompile(`(?s),hashAlg:function\(a,b,c\)\{(.*?)},(?s)`)
 )
 
 func GetDeviceInfo() {
-
-	// 动态获取设备信息
-	//body, err := RequestGetWithoutJson("", "https://kyfw.12306.cn/otn/HttpZF/GetJS", nil, nil)
-	//if err != nil {
-	//	seelog.Error(err)
-	//	return
-	//}
-	//
-	//matchData := AlgIDRe.FindSubmatch(body)
-	//if len(matchData) < 2 {
-	//	seelog.Error("get algID fail")
-	//	return
-	//}
-	//algId := strings.TrimLeft(string(matchData[1]), `\x3d`)
-	//algId = strings.TrimRight(algId, `\`)
-	//
-	//data := url.Values{}
-	//data.Set("adblock", "0")
-	//data.Set("cookieEnabled", "1")
-	//data.Set("custID", "133")
-	//data.Set("doNotTrack", "unknown")
-	//data.Set("flashVersion", "0")
-	//data.Set("javaEnabled", "0")
-	//data.Set("jsFonts", "c227b88b01f5c513710d4b9f16a5ce52")
-	//data.Set("localCode", "3232236206")
-	//data.Set("mimeTypes", "52d67b2a5aa5e031084733d5006cc664")
-	//data.Set("os", "MacIntel")
-	//data.Set("platform", "WEB")
-	//data.Set("plugins", "d22ca0b81584fbea62237b14bd04c866")
-	//data.Set("scrAvailSize", strconv.Itoa(rand.Intn(1000))+"x1920")
-	//data.Set("srcScreenSize", "24xx1080x1920")
-	//data.Set("storeDb", "i1l1o1s1")
-	//data.Set("timeZone", "-8")
-	//data.Set("touchSupport", "99115dfb07133750ba677d055874de87")
-	//data.Set("userAgent", "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/98.0.4758.80 Safari/537.36")
-	//data.Set("webSmartID", "f4e3b7b14cc647e30a6267028ad54c56")
-	//data.Set("timestamp", strconv.Itoa(int(time.Now().Unix()*1000)))
-	//data.Set("algID", algId)
 
 	body, err := RequestGetWithoutJson("", "https://kyfw.12306.cn/otn/HttpZF/logdevice?algID=kPKMh0v14R&hashCode=QVOG5ISqfjYPBVzD1nZK3tWxd-vJH_lBCmgRi1DJYsU&FMQw=0&q4f3=zh-CN&VPIf=1&custID=133&VEek=unknown&dzuS=0&yD16=0&EOQP=c227b88b01f5c513710d4b9f16a5ce52&jp76=fe9c964a38174deb6891b6523b8e4518&hAqN=MacIntel&platform=WEB&ks0Q=1412399caf7126b9506fee481dd0a407&TeRS=794x1440&tOHY=30xx900x1440&Fvje=i1l1o1s1&q5aJ=-8&wNLf=99115dfb07133750ba677d055874de87&0aew=Mozilla/5.0%20(Macintosh;%20Intel%20Mac%20OS%20X%2010_15_7)%20AppleWebKit/537.36%20(KHTML,%20like%20Gecko)%20Chrome/98.0.4758.102%20Safari/537.36&E3gR=6830b7871c4d4d53e2c64935d267dda8&timestamp="+strconv.Itoa(int(time.Now().Unix()*1000)), nil)
 	if err != nil {
@@ -160,22 +141,24 @@ func ReadCookieFromFile() error {
 }
 
 func CreateLogDeviceParam() url.Values {
-	//body, err := RequestGetWithoutJson("", "https://kyfw.12306.cn/otn/HttpZF/GetJS", nil)
-	//if err != nil {
-	//	seelog.Error(err)
-	//	return nil
-	//}
-	//
-	//matchData := AlgIDRe.FindSubmatch(body)
-	//if len(matchData) < 2 {
-	//	seelog.Error("get algID fail")
-	//	return nil
-	//}
-	//algId := strings.TrimLeft(string(matchData[1]), `\x3d`)
-	//algId = strings.TrimRight(algId, `\`)
+	body, err := RequestGetWithoutJson("", "https://kyfw.12306.cn/otn/HttpZF/GetJS", nil)
+	if err != nil {
+		seelog.Error(err)
+		return nil
+	}
+
+	matchData := AlgIDRe.FindSubmatch(body)
+	if len(matchData) < 2 {
+		seelog.Error("get algID fail")
+		return nil
+	}
+	algId := strings.TrimLeft(string(matchData[1]), `\x3d`)
+	algId = strings.TrimRight(algId, `\`)
 
 	token := ""
 	data := url.Values{}
+	token += "adblock0"
+	data.Set(getDeviceParam("adblock"), "0")
 	token += "browserLanguagezh-CN"
 	data.Set(getDeviceParam("browserLanguage"), "zh-CN")
 	token += "cookieEnabled1"
@@ -197,11 +180,10 @@ func CreateLogDeviceParam() url.Values {
 	token += "platformWEB"
 	data.Set(getDeviceParam("platform"), "WEB")
 	token += "plugins1412399caf7126b9506fee481dd0a407"
-	data.Set(getDeviceParam("plugins"), "d22ca0b81584fbea62237b14bd04c866")
-
-	// todo 需要改为变量
-	token += "scrAvailSize794x1440"
-	data.Set(getDeviceParam("scrAvailSize"), "794x1440")
+	data.Set(getDeviceParam("plugins"), "1412399caf7126b9506fee481dd0a407")
+	width := strconv.Itoa(GetRand(500, 1000))
+	token += "scrAvailSize" + width + "x1440"
+	data.Set(getDeviceParam("scrAvailSize"), width+"x1440")
 	token += "srcScreenSize30xx900x1440"
 	data.Set(getDeviceParam("srcScreenSize"), "30xx900x1440")
 	token += "storeDbi1l1o1s1"
@@ -210,16 +192,15 @@ func CreateLogDeviceParam() url.Values {
 	data.Set(getDeviceParam("timeZone"), "-8")
 	token += "touchSupport99115dfb07133750ba677d055874de87"
 	data.Set(getDeviceParam("touchSupport"), "99115dfb07133750ba677d055874de87")
+	webNo := strconv.Itoa(GetRand(5000, 7000))
+	token += "userAgentMozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/98.0." + webNo + ".109 Safari/537.36"
+	data.Set(getDeviceParam("userAgent"), "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/98.0."+webNo+".109 Safari/537.36")
+	token += "webSmartID74a173cc6a9e7335c27eddd372be213a"
+	data.Set(getDeviceParam("webSmartID"), "74a173cc6a9e7335c27eddd372be213a")
 
-	// todo 需要改为变量
-	token += "userAgentMozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/98.0.4758.102 Safari/537.36"
-	data.Set(getDeviceParam("userAgent"), "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/98.0.4758.102 Safari/537.36")
-	token += "webSmartID6830b7871c4d4d53e2c64935d267dda8"
-	data.Set(getDeviceParam("webSmartID"), "6830b7871c4d4d53e2c64935d267dda8")
-
-	data.Set("hashCode", createHashCode(token))
+	data.Set("hashCode", createHashCode(token, string(body)))
 	data.Set("timestamp", strconv.Itoa(int(time.Now().Unix()*1000)))
-	//data.Set("algID", algId)
+	data.Set("algID", algId)
 	return data
 }
 
@@ -231,46 +212,125 @@ func getDeviceParam(param string) string {
 	return param
 }
 
-func createHashCode(token string) string {
+func createHashCode(token, body string) string {
+	body = strings.Replace(body, "\n", "", -1)
+	body = strings.Replace(body, "\r", "", -1)
+	matchFunc := hashAlgRe.FindSubmatch([]byte(body))
+	fmt.Println(string(matchFunc[1]))
+
+	parIdx := findParIndex(string(matchFunc[1]))
+	sort.Slice(parIdx, func(i, j int) bool {
+		return parIdx[i].index < parIdx[j].index
+	})
+
+	for _, par := range parIdx {
+		fmt.Println(fmt.Sprintf("%+v, %s", par, token))
+		switch par.par {
+		case slitPar:
+			token = slitToken(token)
+		case qaPar, qa2Par:
+			token = qa(token)
+		case sha256Par, zaPar:
+			token = sha256Token(token)
+		case reversePar:
+			token = reverse(token)
+		case changePar:
+			token = changeStr(token)
+		case encodePar:
+			token = encodeToken(token)
+		case raPar:
+		default:
+			seelog.Error("par is not found")
+		}
+	}
+
+	return token
+}
+
+func sha256Token(token string) string {
+	h := sha256.New()
+	h.Write([]byte(token))
+	token = base64.StdEncoding.EncodeToString(h.Sum(nil))
+	token = strings.Replace(token, "+", "-", -1)
+	token = strings.Replace(token, "/", "_", -1)
+	token = strings.Replace(token, "=", "", -1)
+	return token
+}
+
+func findParIndex(body string) []*parIndex {
+	pars := []string{slitPar, sha256Par, qaPar, changePar, reversePar, zaPar, raPar, qa2Par, encodePar}
+	res := make([]*parIndex, 0)
+	for _, par := range pars {
+		startIdx := 0
+
+		for {
+			idx := strings.Index(body[startIdx:], par)
+			if idx == -1 {
+				break
+			}
+			parIdx := &parIndex{
+				par:   par,
+				index: startIdx + idx,
+			}
+			startIdx += idx + len(par)
+			res = append(res, parIdx)
+		}
+	}
+	return res
+}
+
+func encodeToken(token string) string {
+	tLen := len(token)
+	if tLen%2 == 0 {
+		return token[tLen/2:tLen] + token[0:tLen/2]
+	}
+
+	return token[tLen/2+1:tLen] + token[tLen/2:tLen/2+1] + token[0:tLen/2]
+}
+
+func qa(token string) string {
+	tokenRune := []rune(token)
+	for i := 0; i < len(tokenRune); i++ {
+		if tokenRune[i] != 127 {
+			tokenRune[i] = tokenRune[i] + 1
+		} else {
+			tokenRune[i] = 0
+		}
+	}
+
+	return string(tokenRune)
+}
+
+func slitToken(token string) string {
 	tLen := len(token)
 	tf := tLen / 3
 	if tLen%3 != 0 {
 		tf = tLen/3 + 1
 	}
 	if tLen >= 3 {
-		token = token[tf:tf*2] + token[tf*2:tLen] + token[0:tf]
+		a := token[tf*2 : tLen]
+		b := token[0:tf]
+		c := token[tf : 2*tf]
+		token = a + b + c
 	}
-
-	// 在处理一次
-	tLen = len(token)
-	tf = tLen / 3
-	if tLen%3 != 0 {
-		tf = tLen/3 + 1
-	}
-	if tLen >= 3 {
-		token = token[tf*2:tLen] + token[0:tf] + token[tf:2*tf]
-	}
-
-	token = encodeToken(token)
-	token = encodeToken(token)
-	token = encodeToken(token)
-
-
-	h := sha256.New()
-	h.Write([]byte(token))
-	base64Token := base64.StdEncoding.EncodeToString(h.Sum(nil))
-	base64Token = strings.Replace(base64Token, "+", "-", -1)
-	base64Token = strings.Replace(base64Token, "/", "_", -1)
-	base64Token = strings.Replace(base64Token, "=", "", -1)
-	fmt.Println(base64Token)
-	return base64Token
+	return token
 }
 
-func encodeToken(token string)string {
-	tLen := len(token)
-	if tLen%2 == 0 {
-		return token[tLen/2:tLen] + token[0:tLen/2]
+func changeStr(token string) string {
+	tokenRune := []byte(token)
+	for i := 0; i < len(tokenRune)/2; i++ {
+		if i%2 == 0 {
+			tokenRune[i], tokenRune[len(tokenRune)-1-i] = tokenRune[len(tokenRune)-1-i], tokenRune[i]
+		}
 	}
 
-	return token[tLen/2+1:tLen] + token[tLen/2:tLen/2+1] +  token[0:tLen/2]
+	return string(tokenRune)
+}
+
+func reverse(token string) string {
+	a := []rune(token)
+	for i, j := 0, len(a)-1; i < j; i, j = i+1, j-1 {
+		a[i], a[j] = a[j], a[i]
+	}
+	return string(a)
 }

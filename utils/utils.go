@@ -29,3 +29,15 @@ func GetRand(min, max int) int {
 
 	return rand.Intn(max-min) + min
 }
+
+func ReplaceChar(str string) string {
+	str = strings.Replace(str, "%2A", "*", -1)
+	str = strings.Replace(str, "%28", "(", -1)
+	str = strings.Replace(str, "%29", ")", -1)
+	str = strings.Replace(str, "%2F", "/", -1)
+	str = strings.Replace(str, "+", "%20", -1)
+	str = strings.Replace(str, "%3B", ";", -1)
+	str = strings.Replace(str, "%2C", ",", -1)
+
+	return str
+}
