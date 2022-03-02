@@ -63,7 +63,7 @@ func QrLogin(qrImage *module.QrImage) error {
 		if err == nil && qrRes.ResultCode == "2" {
 			break
 		} else {
-			seelog.Infof("请在'./conf/'查看二维码并用12306扫描登陆，二维码暂未登陆，继续查看二维码状态 %v", err)
+			seelog.Infof("请在'./conf/'查看二维码并用12306扫描登陆，二维码暂未登陆，继续查看二维码状态")
 		}
 		time.Sleep(1 * time.Second)
 	}
