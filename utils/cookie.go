@@ -82,7 +82,7 @@ func GetDeviceInfo() {
 		}
 	}
 
-	seelog.Error("生成device信息失败, 请通过启动参数手动设置device信息")
+	seelog.Error("生成device信息失败, 请手动把cookie信息复制到./conf/cookie文件中")
 
 }
 
