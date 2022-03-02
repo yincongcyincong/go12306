@@ -1,4 +1,4 @@
-package main
+package action
 
 import (
 	"errors"
@@ -6,7 +6,6 @@ import (
 	"github.com/cihub/seelog"
 	"github.com/tools/12306/module"
 	"github.com/tools/12306/utils"
-	"log"
 	"math"
 	"math/rand"
 	"net/url"
@@ -25,7 +24,6 @@ func SubmitOrder(trainData *module.TrainData, searchParam *module.SearchParam) e
 	data.Set("query_to_station_name", searchParam.ToStationName)
 	secretStr, err := url.QueryUnescape(trainData.SecretStr)
 	if err != nil {
-		seelog.Error(err)
 		return err
 	}
 	data.Set("secretStr", secretStr)
@@ -33,13 +31,11 @@ func SubmitOrder(trainData *module.TrainData, searchParam *module.SearchParam) e
 	submitOrder := new(module.SubmitOrderRes)
 	err = utils.Request(utils.ReplaceSpecailChar(data.Encode()), utils.GetCookieStr(), "https://kyfw.12306.cn/otn/leftTicket/submitOrderRequest", submitOrder, map[string]string{"Referer": "https://kyfw.12306.cn/otn/leftTicket/init?linktypeid=dc"})
 	if err != nil {
-		seelog.Error(err)
 		return err
 	}
 
 	if submitOrder.Data != "0" {
-		seelog.Errorf("submit order fail: %+v", submitOrder)
-		return errors.New("submit order fail")
+		return errors.New(fmt.Sprintf("提交订单失败: %+v", submitOrder))
 	}
 
 	return nil
@@ -72,13 +68,11 @@ func CheckOrder(passengers []*module.Passenger, submitToken *module.SubmitToken,
 	checkOrderRes := new(module.CheckOrderRes)
 	err := utils.Request(utils.ReplaceSpecailChar(data.Encode()), utils.GetCookieStr(), "https://kyfw.12306.cn/otn/confirmPassenger/checkOrderInfo", checkOrderRes, map[string]string{"Referer": "https://kyfw.12306.cn/otn/confirmPassenger/initDc"})
 	if err != nil {
-		seelog.Error(err)
 		return err
 	}
 
 	if !checkOrderRes.Status || !checkOrderRes.Data.SubmitStatus {
-		seelog.Errorf("check order fail: %+v", checkOrderRes)
-		return errors.New("check order fail")
+		return errors.New(fmt.Sprintf("检查订单失败: %+v", checkOrderRes))
 	}
 
 	return nil
@@ -88,7 +82,6 @@ func GetQueueCount(submitToken *module.SubmitToken, searchParam *module.SearchPa
 	var err error
 	startTime, err := time.Parse("2006-01-02", searchParam.TrainDate)
 	if err != nil {
-		seelog.Error(err)
 		return err
 	}
 
@@ -108,7 +101,6 @@ func GetQueueCount(submitToken *module.SubmitToken, searchParam *module.SearchPa
 	queueRes := new(module.QueueCountRes)
 	err = utils.Request(utils.ReplaceSpecailChar(data.Encode()), utils.GetCookieStr(), "https://kyfw.12306.cn/otn/confirmPassenger/getQueueCount", queueRes, map[string]string{"Referer": "https://kyfw.12306.cn/otn/confirmPassenger/initDc"})
 	if err != nil {
-		seelog.Error(err)
 		return err
 	}
 
@@ -160,18 +152,15 @@ func ConfirmQueue(passengers []*module.Passenger, submitToken *module.SubmitToke
 	confirmQueue := new(module.ConfirmQueueRes)
 	err := utils.Request(utils.ReplaceSpecailChar(data.Encode()), utils.GetCookieStr(), "https://kyfw.12306.cn/otn/confirmPassenger/confirmSingleForQueue", confirmQueue, map[string]string{"Referer": "https://kyfw.12306.cn/otn/confirmPassenger/initDc"})
 	if err != nil {
-		seelog.Error(err)
 		return err
 	}
 
 	switch data := confirmQueue.Data.(type) {
 	case string:
-		seelog.Error(data)
 		return errors.New(data)
 	case module.ConfirmData:
 		if !data.SubmitStatus {
-			seelog.Errorf("confirm queue fail: %+v", confirmQueue.Data)
-			return errors.New("confirm queue fail")
+			return errors.New(fmt.Sprintf("确认排队信息失败: %+v", confirmQueue.Data))
 		}
 	}
 
@@ -186,7 +175,6 @@ func OrderWait(submitToken *module.SubmitToken) (*module.OrderWaitRes, error) {
 	orderWaitRes := new(module.OrderWaitRes)
 	err = utils.RequestGet(utils.GetCookieStr(), orderWaitUrl, orderWaitRes, map[string]string{"Referer": "https://kyfw.12306.cn/otn/confirmPassenger/initDc"})
 	if err != nil {
-		seelog.Error(err)
 		return nil, err
 	}
 
@@ -217,44 +205,42 @@ func OrderResult(submitToken *module.SubmitToken, orderNo string) error {
 	orderRes := new(module.OrderResultRes)
 	err = utils.Request(data.Encode(), utils.GetCookieStr(), "https://kyfw.12306.cn/otn/confirmPassenger/resultOrderForDcQueue", orderRes, map[string]string{"Referer": "https://kyfw.12306.cn/otn/confirmPassenger/initDc"})
 	if err != nil {
-		seelog.Error(err)
 		return err
 	}
 
 	if !orderRes.Data.SubmitStatus {
-		seelog.Errorf("result order fail: %+v", orderRes)
-		return err
+		return errors.New(fmt.Sprintf("获取订单信息失败: %+v", orderRes))
 	}
 
 	return nil
 }
 
-func AutoBuy(passenger *module.Passenger, trainData *module.TrainData, submitToken *module.SubmitToken) {
-	//passengerTicketStr : 座位编号,0,票类型,乘客名,证件类型,证件号,手机号码,保存常用联系人(Y或N)
-	//oldPassengersStr: 乘客名,证件类型,证件号,乘客类型
-	var err error
-
-	data := make(url.Values)
-	data.Set("bed_level_order_num", "000000000000000000000000000000")
-	data.Set("passengerTicketStr", "O,"+passenger.PassengerTicketStr)
-	data.Set("oldPassengerStr", passenger.OldPassengerStr)
-	data.Set("tour_flag", "dc")
-	data.Set("cancel_flag", "2")
-	data.Set("purpose_codes", "ADULT")
-	data.Set("REPEAT_SUBMIT_TOKEN", submitToken.Token)
-	data.Set("query_from_station_name", trainData.FromStation)
-	data.Set("query_to_station_name", trainData.ToStation)
-	data.Set("train_date", trainData.StartTime)
-
-	trainData.SecretStr, err = url.QueryUnescape(trainData.SecretStr)
-	if err != nil {
-		log.Panicln(err)
-	}
-	data.Set("secretStr", trainData.SecretStr)
-
-	qrImage := new(module.AutoBuyRes)
-	err = utils.Request(data.Encode(), utils.GetCookieStr(), "https://kyfw.12306.cn/otn/confirmPassenger/autoSubmitOrderRequest", qrImage, map[string]string{"Referer": "https://kyfw.12306.cn/otn/confirmPassenger/initDc"})
-	if err != nil {
-		log.Panicln(err)
-	}
-}
+//func AutoBuy(passenger *module.Passenger, trainData *module.TrainData, submitToken *module.SubmitToken) {
+//	//passengerTicketStr : 座位编号,0,票类型,乘客名,证件类型,证件号,手机号码,保存常用联系人(Y或N)
+//	//oldPassengersStr: 乘客名,证件类型,证件号,乘客类型
+//	var err error
+//
+//	data := make(url.Values)
+//	data.Set("bed_level_order_num", "000000000000000000000000000000")
+//	data.Set("passengerTicketStr", "O,"+passenger.PassengerTicketStr)
+//	data.Set("oldPassengerStr", passenger.OldPassengerStr)
+//	data.Set("tour_flag", "dc")
+//	data.Set("cancel_flag", "2")
+//	data.Set("purpose_codes", "ADULT")
+//	data.Set("REPEAT_SUBMIT_TOKEN", submitToken.Token)
+//	data.Set("query_from_station_name", trainData.FromStation)
+//	data.Set("query_to_station_name", trainData.ToStation)
+//	data.Set("train_date", trainData.StartTime)
+//
+//	trainData.SecretStr, err = url.QueryUnescape(trainData.SecretStr)
+//	if err != nil {
+//		log.Panicln(err)
+//	}
+//	data.Set("secretStr", trainData.SecretStr)
+//
+//	qrImage := new(module.AutoBuyRes)
+//	err = utils.Request(data.Encode(), utils.GetCookieStr(), "https://kyfw.12306.cn/otn/confirmPassenger/autoSubmitOrderRequest", qrImage, map[string]string{"Referer": "https://kyfw.12306.cn/otn/confirmPassenger/initDc"})
+//	if err != nil {
+//		log.Panicln(err)
+//	}
+//}

@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/cihub/seelog"
+	"github.com/tools/12306/action"
 	"github.com/tools/12306/conf"
 	"github.com/tools/12306/module"
 	"github.com/tools/12306/notice"
@@ -22,15 +23,15 @@ func CommandStart() {
 	}()
 
 	var err error
-	if err = GetLoginData(); err != nil {
-		qrImage, err := CreateImage()
+	if err = action.GetLoginData(); err != nil {
+		qrImage, err := action.CreateImage()
 		if err != nil {
 			seelog.Errorf("创建二维码失败:%v", err)
 			return
 		}
 		qrImage.Image = ""
 
-		err = QrLogin(qrImage)
+		err = action.QrLogin(qrImage)
 		if err != nil {
 			seelog.Errorf("登陆失败:%v", err)
 			return
@@ -84,7 +85,7 @@ func getTrainInfo(searchParam *module.SearchParam, trainMap map[string]bool, sea
 	searchParam.SeatType = ""
 	var trainData *module.TrainData
 
-	trains, err := GetTrainInfo(searchParam)
+	trains, err := action.GetTrainInfo(searchParam)
 	if err != nil {
 		seelog.Errorf("查询车站失败:%v", err)
 		return nil, err
@@ -131,7 +132,7 @@ func getUserInfo(searchParam *module.SearchParam, trainStr, seatStr, passengerSt
 	searchParam.FromStation = conf.Station[searchParam.FromStationName]
 	searchParam.ToStation = conf.Station[searchParam.ToStationName]
 
-	trains, err := GetTrainInfo(searchParam)
+	trains, err := action.GetTrainInfo(searchParam)
 	if err != nil {
 		seelog.Errorf("查询车站失败:%v", err)
 		return
@@ -147,12 +148,12 @@ func getUserInfo(searchParam *module.SearchParam, trainStr, seatStr, passengerSt
 	fmt.Println("请输入座位类型(多个#分隔，一等座，二等座，硬座，软卧，硬卧等):")
 	fmt.Scanf("%s", seatStr)
 
-	submitToken, err := GetRepeatSubmitToken()
+	submitToken, err := action.GetRepeatSubmitToken()
 	if err != nil {
 		seelog.Errorf("获取提交数据失败:%v", err)
 		return
 	}
-	passengers, err := GetPassengers(submitToken)
+	passengers, err := action.GetPassengers(submitToken)
 	if err != nil {
 		seelog.Errorf("获取用户失败:%v", err)
 		return
@@ -168,30 +169,30 @@ func getUserInfo(searchParam *module.SearchParam, trainStr, seatStr, passengerSt
 }
 
 func startOrder(searchParam *module.SearchParam, trainData *module.TrainData, passengerMap map[string]bool) error {
-	err := GetLoginData()
+	err := action.GetLoginData()
 	if err != nil {
 		seelog.Errorf("自动登陆失败：%v", err)
 	}
 
-	err = CheckUser()
+	err = action.CheckUser()
 	if err != nil {
 		seelog.Errorf("检查用户状态失败：%v", err)
 		return err
 	}
 
-	err = SubmitOrder(trainData, searchParam)
+	err = action.SubmitOrder(trainData, searchParam)
 	if err != nil {
 		seelog.Errorf("提交订单失败：%v", err)
 		return err
 	}
 
-	submitToken, err := GetRepeatSubmitToken()
+	submitToken, err := action.GetRepeatSubmitToken()
 	if err != nil {
 		seelog.Errorf("获取提交数据失败：%v", err)
 		return err
 	}
 
-	passengers, err := GetPassengers(submitToken)
+	passengers, err := action.GetPassengers(submitToken)
 	if err != nil {
 		seelog.Errorf("获取乘客失败：%v", err)
 		return err
@@ -203,19 +204,19 @@ func startOrder(searchParam *module.SearchParam, trainData *module.TrainData, pa
 		}
 	}
 
-	err = CheckOrder(buyPassengers, submitToken, searchParam)
+	err = action.CheckOrder(buyPassengers, submitToken, searchParam)
 	if err != nil {
 		seelog.Errorf("检查订单失败：%v", err)
 		return err
 	}
 
-	err = GetQueueCount(submitToken, searchParam)
+	err = action.GetQueueCount(submitToken, searchParam)
 	if err != nil {
 		seelog.Errorf("获取排队数失败：%v", err)
 		return err
 	}
 
-	err = ConfirmQueue(buyPassengers, submitToken, searchParam)
+	err = action.ConfirmQueue(buyPassengers, submitToken, searchParam)
 	if err != nil {
 		seelog.Errorf("提交订单失败：%v", err)
 		return err
@@ -223,7 +224,7 @@ func startOrder(searchParam *module.SearchParam, trainData *module.TrainData, pa
 
 	var orderWaitRes *module.OrderWaitRes
 	for i := 0; i < 20; i++ {
-		orderWaitRes, err = OrderWait(submitToken)
+		orderWaitRes, err = action.OrderWait(submitToken)
 		if err != nil {
 			time.Sleep(7 * time.Second)
 			continue
@@ -234,7 +235,7 @@ func startOrder(searchParam *module.SearchParam, trainData *module.TrainData, pa
 	}
 
 	if orderWaitRes != nil {
-		err = OrderResult(submitToken, orderWaitRes.Data.OrderId)
+		err = action.OrderResult(submitToken, orderWaitRes.Data.OrderId)
 		if err != nil {
 			seelog.Errorf("获取订单状态失败：%v", err)
 		}
@@ -276,13 +277,13 @@ func startCheckLogin() {
 		for {
 			select {
 			case <-timer.C:
-				if !CheckLogin() {
+				if !action.CheckLogin() {
 					seelog.Errorf("登陆状态为未登陆")
 				} else {
 					seelog.Info("登陆状态为登陆中")
 				}
 			case <-alTimer.C:
-				err := GetLoginData()
+				err := action.GetLoginData()
 				if err != nil {
 					seelog.Errorf("自动登陆失败：%v", err)
 				}

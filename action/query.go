@@ -1,11 +1,10 @@
-package main
+package action
 
 import (
 	"bytes"
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/cihub/seelog"
 	"github.com/tools/12306/conf"
 	"github.com/tools/12306/module"
 	"github.com/tools/12306/utils"
@@ -26,21 +25,18 @@ func GetTrainInfo(searchParam *module.SearchParam) ([]*module.TrainData, error) 
 	searchRes := new(module.TrainRes)
 	cdn := utils.GetCdn()
 	if utils.InBlackList(cdn) {
-		seelog.Errorf("%s 在小黑屋", cdn)
-		return nil, errors.New("cdn in black list")
+		return nil, errors.New(fmt.Sprintf("%s 在小黑屋", cdn))
 	}
 
 	err = utils.RequestGetWithCDN(utils.GetCookieStr(), fmt.Sprintf("https://kyfw.12306.cn/otn/%s?leftTicketDTO.train_date=%s&leftTicketDTO.from_station=%s&leftTicketDTO.to_station=%s&purpose_codes=ADULT",
 		conf.QueryUrl, searchParam.TrainDate, searchParam.FromStation, searchParam.ToStation), searchRes, nil, cdn)
 	if err != nil {
 		utils.AddBlackList(cdn)
-		seelog.Error(err)
 		return nil, err
 	}
 
 	if searchRes.HTTPStatus != 200 && searchRes.Status {
-		seelog.Errorf("get train info fail: %+v", searchRes)
-		return nil, errors.New("get train info fail")
+		return nil, errors.New(fmt.Sprintf("获取列车信息失败: %+v", searchRes))
 	}
 
 	searchDatas := make([]*module.TrainData, len(searchRes.Data.Result))
@@ -94,7 +90,6 @@ func GetRepeatSubmitToken() (*module.SubmitToken, error) {
 		ticketRes[1] = bytes.Replace(ticketRes[1], []byte("'"), []byte(`"`), -1)
 		err = json.Unmarshal(ticketRes[1], &submitToken.TicketInfo)
 		if err != nil {
-			seelog.Error(err)
 			return nil, err
 		}
 	}
@@ -104,7 +99,6 @@ func GetRepeatSubmitToken() (*module.SubmitToken, error) {
 		orderRes[1] = bytes.Replace(orderRes[1], []byte("'"), []byte(`"`), -1)
 		err = json.Unmarshal(orderRes[1], &submitToken.OrderRequestParam)
 		if err != nil {
-			seelog.Error(err)
 			return nil, err
 		}
 	}
@@ -120,13 +114,11 @@ func GetPassengers(submitToken *module.SubmitToken) (*module.PassengerRes, error
 	res := new(module.PassengerRes)
 	err := utils.Request(data.Encode(), utils.GetCookieStr(), "https://kyfw.12306.cn/otn/confirmPassenger/getPassengerDTOs", res, nil)
 	if err != nil {
-		seelog.Error(err)
 		return nil, err
 	}
 
 	if res.Status && res.HTTPStatus != 200 {
-		seelog.Error(err)
-		return nil, err
+		return nil, errors.New(fmt.Sprintf("获取乘客信息失败: %+v", res))
 	}
 
 	for _, p := range res.Data.NormalPassengers {
@@ -148,18 +140,15 @@ func CheckUser() error {
 	res := new(module.CheckUserRes)
 	err := utils.Request(data.Encode(), utils.GetCookieStr(), "https://kyfw.12306.cn/otn/login/checkUser", res, nil)
 	if err != nil {
-		seelog.Error(err)
 		return err
 	}
 
 	if res.Status && res.HTTPStatus != 200 {
-		seelog.Errorf("checkUser fail:")
-		return err
+		return errors.New(fmt.Sprintf("检查用户失败:%+v",res))
 	}
 
 	if !res.Data.Flag {
-		seelog.Errorf("check user fail: %+v", res)
-		return errors.New("check user fail")
+		return errors.New(fmt.Sprintf("检查用户失败:%+v",res))
 	}
 	return nil
 

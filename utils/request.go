@@ -96,7 +96,7 @@ func Request(data string, cookieStr, url string, res interface{}, headers map[st
 
 	err = json.Unmarshal(respBody, res)
 	if err != nil {
-		seelog.Errorf("json unmarshal fail: %v, %v, %v", err, string(respBody), url)
+		seelog.Tracef("json unmarshal fail: %v, %v, %v", err, string(respBody), url)
 		return err
 	}
 
@@ -233,13 +233,11 @@ func RequestGetWithCDN(cookieStr, url string, res interface{}, headers map[strin
 func EncodeParam(r *http.Request, param interface{}) error {
 	respBody, err := ioutil.ReadAll(r.Body)
 	if err != nil {
-		seelog.Error(err)
 		return err
 	}
 
 	err = json.Unmarshal(respBody, param)
 	if err != nil {
-		seelog.Error(err)
 		return err
 	}
 

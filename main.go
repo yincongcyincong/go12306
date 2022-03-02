@@ -4,6 +4,7 @@ import (
 	"flag"
 	"fmt"
 	"github.com/cihub/seelog"
+	"github.com/tools/12306/action"
 	"github.com/tools/12306/conf"
 	"github.com/tools/12306/module"
 	"github.com/tools/12306/notice"
@@ -114,7 +115,7 @@ func main() {
 	case <-sigs:
 		seelog.Info("用户登出")
 		utils.WriteCookieToFile()
-		LoginOut()
+		action.LoginOut()
 	}
 }
 
@@ -122,7 +123,7 @@ func IsLogin(reqFunc func(w http.ResponseWriter, r *http.Request)) func(w http.R
 
 	return func(w http.ResponseWriter, r *http.Request) {
 		// 判断是否login
-		err := GetLoginData()
+		err := action.GetLoginData()
 		if err != nil {
 			utils.HTTPFailResp(w, http.StatusInternalServerError, 2, "not login", "")
 			return
@@ -133,7 +134,7 @@ func IsLogin(reqFunc func(w http.ResponseWriter, r *http.Request)) func(w http.R
 }
 
 func CreateImageReq(w http.ResponseWriter, r *http.Request) {
-	qrImage, err := CreateImage()
+	qrImage, err := action.CreateImage()
 	if err != nil {
 		utils.HTTPFailResp(w, http.StatusInternalServerError, 1, err.Error(), "")
 		return
@@ -148,7 +149,7 @@ func QrLoginReq(w http.ResponseWriter, r *http.Request) {
 		utils.HTTPFailResp(w, http.StatusInternalServerError, 1, err.Error(), "")
 		return
 	}
-	err = QrLogin(qrImage)
+	err = action.QrLogin(qrImage)
 	if err != nil {
 		utils.HTTPFailResp(w, http.StatusInternalServerError, 1, err.Error(), "")
 		return
@@ -159,7 +160,7 @@ func QrLoginReq(w http.ResponseWriter, r *http.Request) {
 func UserLogoutReq(w http.ResponseWriter, r *http.Request) {
 	// cookie写入文件
 	utils.WriteCookieToFile()
-	err := LoginOut()
+	err := action.LoginOut()
 	if err != nil {
 		utils.HTTPFailResp(w, http.StatusInternalServerError, 1, err.Error(), "")
 		return
@@ -170,13 +171,13 @@ func UserLogoutReq(w http.ResponseWriter, r *http.Request) {
 func SearchInfo(w http.ResponseWriter, r *http.Request) {
 
 	res := new(module.SearchInfo)
-	submitToken, err := GetRepeatSubmitToken()
+	submitToken, err := action.GetRepeatSubmitToken()
 	if err != nil {
 		utils.HTTPFailResp(w, http.StatusInternalServerError, 1, err.Error(), "")
 		return
 	}
 
-	passengers, err := GetPassengers(submitToken)
+	passengers, err := action.GetPassengers(submitToken)
 	if err != nil {
 		utils.HTTPFailResp(w, http.StatusInternalServerError, 1, err.Error(), "")
 		return
@@ -197,7 +198,7 @@ func SearchTrain(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	res, err := GetTrainInfo(searchParam)
+	res, err := action.GetTrainInfo(searchParam)
 	if err != nil {
 		utils.HTTPFailResp(w, http.StatusInternalServerError, 1, err.Error(), "")
 		return
@@ -218,25 +219,25 @@ func StartOrderReq(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = CheckUser()
+	err = action.CheckUser()
 	if err != nil {
 		utils.HTTPFailResp(w, http.StatusInternalServerError, 1, err.Error(), "")
 		return
 	}
 
-	err = SubmitOrder(orderParam.TrainData, orderParam.SearchParam)
+	err = action.SubmitOrder(orderParam.TrainData, orderParam.SearchParam)
 	if err != nil {
 		utils.HTTPFailResp(w, http.StatusInternalServerError, 1, err.Error(), "")
 		return
 	}
 
-	submitToken, err := GetRepeatSubmitToken()
+	submitToken, err := action.GetRepeatSubmitToken()
 	if err != nil {
 		utils.HTTPFailResp(w, http.StatusInternalServerError, 1, err.Error(), "")
 		return
 	}
 
-	passengers, err := GetPassengers(submitToken)
+	passengers, err := action.GetPassengers(submitToken)
 	if err != nil {
 		utils.HTTPFailResp(w, http.StatusInternalServerError, 1, err.Error(), "")
 		return
@@ -248,19 +249,19 @@ func StartOrderReq(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	err = CheckOrder(orderParam.Passengers, submitToken, orderParam.SearchParam)
+	err = action.CheckOrder(orderParam.Passengers, submitToken, orderParam.SearchParam)
 	if err != nil {
 		utils.HTTPFailResp(w, http.StatusInternalServerError, 1, err.Error(), "")
 		return
 	}
 
-	err = GetQueueCount(submitToken, orderParam.SearchParam)
+	err = action.GetQueueCount(submitToken, orderParam.SearchParam)
 	if err != nil {
 		utils.HTTPFailResp(w, http.StatusInternalServerError, 1, err.Error(), "")
 		return
 	}
 
-	err = ConfirmQueue(orderParam.Passengers, submitToken, orderParam.SearchParam)
+	err = action.ConfirmQueue(orderParam.Passengers, submitToken, orderParam.SearchParam)
 	if err != nil {
 		utils.HTTPFailResp(w, http.StatusInternalServerError, 1, err.Error(), "")
 		return
@@ -268,7 +269,7 @@ func StartOrderReq(w http.ResponseWriter, r *http.Request) {
 
 	var orderWaitRes *module.OrderWaitRes
 	for i := 0; i < 10; i++ {
-		orderWaitRes, err = OrderWait(submitToken)
+		orderWaitRes, err = action.OrderWait(submitToken)
 		if err != nil {
 			time.Sleep(3 * time.Second)
 			continue
@@ -278,7 +279,7 @@ func StartOrderReq(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	err = OrderResult(submitToken, orderWaitRes.Data.OrderId)
+	err = action.OrderResult(submitToken, orderWaitRes.Data.OrderId)
 	if err != nil {
 		utils.HTTPFailResp(w, http.StatusInternalServerError, 1, err.Error(), "")
 		return
@@ -288,7 +289,7 @@ func StartOrderReq(w http.ResponseWriter, r *http.Request) {
 }
 
 func ReLogin(w http.ResponseWriter, r *http.Request) {
-	err := GetLoginData()
+	err := action.GetLoginData()
 	if err != nil {
 		utils.HTTPFailResp(w, http.StatusInternalServerError, 1, err.Error(), "")
 		return

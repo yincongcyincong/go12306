@@ -53,7 +53,7 @@ func InitAvailableCDN() {
 			for _, cdn := range cdns {
 				err := RequestGetWithCDN(GetCookieStr(), "https://kyfw.12306.cn/otn/dynamicJs/omseuuq", nil, nil, cdn)
 				if err != nil {
-					seelog.Tracef("%s query fail", cdn)
+					seelog.Tracef("cdn %s 请求失败", cdn)
 					continue
 				}
 
@@ -67,7 +67,7 @@ func InitAvailableCDN() {
 	}
 
 	availableCDN.wg.Wait()
-	seelog.Infof("available cdn num: %d", len(availableCDN.cdns))
+	seelog.Infof("可用cdn数量为: %d", len(availableCDN.cdns))
 
 }
 

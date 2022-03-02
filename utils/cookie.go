@@ -140,7 +140,6 @@ func ReadCookieFromFile() error {
 	cookiePath := "./conf/cookie"
 	cookieByte, err := ioutil.ReadFile(cookiePath)
 	if err != nil {
-		seelog.Error(err)
 		return err
 	}
 
@@ -159,7 +158,7 @@ func CreateLogDeviceParam() url.Values {
 
 	matchData := AlgIDRe.FindSubmatch(body)
 	if len(matchData) < 2 {
-		seelog.Error("get algID fail")
+		seelog.Error("获取 algID 失败")
 		return nil
 	}
 	algId := strings.TrimLeft(string(matchData[1]), `\x3d`)
@@ -248,7 +247,7 @@ func createHashCode(token, body string) string {
 			token = encodeToken(token)
 		case raPar:
 		default:
-			seelog.Error("par is not found")
+			seelog.Error("匹配类型查找失败")
 		}
 	}
 
