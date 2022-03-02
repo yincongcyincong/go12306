@@ -37,7 +37,7 @@ func initLog() {
         ` + logType + `
     </outputs>
 	<formats>
-        <format id="main" format="%UTCDate %UTCTime [%LEV] %RelFile:%Line - %Msg%n"></format>
+        <format id="main" format="%Date %Time [%LEV] %RelFile:%Line - %Msg%n"></format>
     </formats>
 </seelog>`)
 	if err != nil {
