@@ -11,6 +11,20 @@ import (
 	"time"
 )
 
+func Init() {
+	initLog()
+	conf.InitConf(*wxrobot)
+	initCookieInfo()
+
+	go utils.InitBlacklist()
+	go utils.InitAvailableCDN()
+	go initHttp()
+
+	if *runType == "command" {
+		go CommandStart()
+	}
+}
+
 func initLog() {
 	logType := `<console/>`
 	if *runType == "web" {

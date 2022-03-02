@@ -4,7 +4,6 @@ import (
 	"flag"
 	"github.com/cihub/seelog"
 	"github.com/tools/12306/action"
-	"github.com/tools/12306/conf"
 	"github.com/tools/12306/utils"
 	_ "net/http/pprof"
 	"os"
@@ -19,21 +18,8 @@ var (
 )
 
 func main() {
-
 	flag.Parse()
-
-	initLog()
-	conf.InitConf(*wxrobot)
-	initCookieInfo()
-
-	go utils.InitBlacklist()
-	go utils.InitAvailableCDN()
-	go initHttp()
-
-	if *runType == "command" {
-		go CommandStart()
-	}
-
+	Init()
 	sigs := make(chan os.Signal, 1)
 	signal.Notify(sigs, syscall.SIGINT)
 	select {
