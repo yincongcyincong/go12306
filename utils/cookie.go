@@ -54,7 +54,7 @@ var (
 
 func GetDeviceInfo() {
 	for i := 0; i < 10; i++ {
-		deviceUrl := "https://kyfw.12306.cn/otn/HttpZF/logdevice?" + CreateLogDeviceParam().Encode()
+		deviceUrl := "https://kyfw.12306.cn/otn/HttpZF/logdevice?" + ReplaceChar(CreateLogDeviceParam().Encode())
 		body, err := RequestGetWithoutJson("", deviceUrl+"&timestamp="+strconv.Itoa(int(time.Now().Unix()*1000)), nil)
 		if err != nil {
 			seelog.Error(err)
@@ -149,6 +149,8 @@ func ReadCookieFromFile() error {
 }
 
 func CreateLogDeviceParam() url.Values {
+	webNo := strconv.Itoa(GetRand(5000, 7000))
+	conf.UserAgent = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/98.0."+webNo+".109 Safari/537.36"
 	body, err := RequestGetWithoutJson("", "https://kyfw.12306.cn/otn/HttpZF/GetJS", nil)
 	if err != nil {
 		seelog.Error(err)
@@ -189,9 +191,9 @@ func CreateLogDeviceParam() url.Values {
 	data.Set(getDeviceParam("platform"), "WEB")
 	token += "plugins1412399caf7126b9506fee481dd0a407"
 	data.Set(getDeviceParam("plugins"), "1412399caf7126b9506fee481dd0a407")
-	width := strconv.Itoa(GetRand(500, 1000))
-	token += "scrAvailSize" + width + "x1440"
-	data.Set(getDeviceParam("scrAvailSize"), width+"x1440")
+	//width := strconv.Itoa(GetRand(500, 1000))
+	token += "scrAvailSize794x1440"
+	data.Set(getDeviceParam("scrAvailSize"), "794x1440")
 	token += "srcScreenSize30xx900x1440"
 	data.Set(getDeviceParam("srcScreenSize"), "30xx900x1440")
 	token += "storeDbi1l1o1s1"
@@ -200,10 +202,9 @@ func CreateLogDeviceParam() url.Values {
 	data.Set(getDeviceParam("timeZone"), "-8")
 	token += "touchSupport99115dfb07133750ba677d055874de87"
 	data.Set(getDeviceParam("touchSupport"), "99115dfb07133750ba677d055874de87")
-	webNo := strconv.Itoa(GetRand(5000, 7000))
 	token += "userAgentMozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/98.0." + webNo + ".109 Safari/537.36"
 	data.Set(getDeviceParam("userAgent"), "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/98.0."+webNo+".109 Safari/537.36")
-	AddCookie(map[string]string{"User-Agent": data.Get(getDeviceParam("userAgent"))})
+	cookie.cookie["User-Agent"] = conf.UserAgent
 	token += "webSmartID74a173cc6a9e7335c27eddd372be213a"
 	data.Set(getDeviceParam("webSmartID"), "74a173cc6a9e7335c27eddd372be213a")
 
