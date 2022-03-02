@@ -117,7 +117,7 @@ func GetQueueCount(submitToken *module.SubmitToken, searchParam *module.SearchPa
 	}
 
 	ticketNum, _ := strconv.Atoi(queueRes.Data.Ticket)
-	if queueRes.Data.Ticket != "充足" || ticketNum <= 0 {
+	if queueRes.Data.Ticket != "充足" && ticketNum <= 0 {
 		return errors.New("购买失败，余票不足")
 	}
 

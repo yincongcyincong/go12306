@@ -20,7 +20,7 @@ import (
 )
 
 var (
-	runType   = flag.String("run_type", "command", "command: 命令行模式，web：网页模式")
+	runType   = flag.String("run_type", "command", "web：网页模式")
 	wxrobot   = flag.String("wxrobot", "", "企业微信机器人通知")
 	mustDevice = flag.String("must_device", "0", "强制生成设备信息")
 )
