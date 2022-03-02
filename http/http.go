@@ -2,12 +2,12 @@ package http
 
 import (
 	"fmt"
-	"github.com/tools/12306/action"
-	"github.com/tools/12306/conf"
-	"github.com/tools/12306/module"
-	"github.com/tools/12306/notice"
-	"github.com/tools/12306/utils"
-	"github.com/tools/12306/view"
+	"github.com/yincongcyincong/go12306/action"
+	"github.com/yincongcyincong/go12306/conf"
+	"github.com/yincongcyincong/go12306/module"
+	"github.com/yincongcyincong/go12306/notice"
+	"github.com/yincongcyincong/go12306/utils"
+	"github.com/yincongcyincong/go12306/view"
 	"net/http"
 	"time"
 )

@@ -2,7 +2,7 @@ package utils
 
 import (
 	"github.com/cihub/seelog"
-	"github.com/tools/12306/conf"
+	"github.com/yincongcyincong/go12306/conf"
 	"sync"
 	"sync/atomic"
 )

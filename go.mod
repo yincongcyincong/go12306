@@ -1,4 +1,5 @@
-module github.com/tools/12306
+module github.com/yincongcyincong/go12306
+
 
 go 1.16
 

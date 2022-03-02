@@ -3,8 +3,8 @@ package main
 import (
 	"flag"
 	"github.com/cihub/seelog"
-	"github.com/tools/12306/action"
-	"github.com/tools/12306/utils"
+	"github.com/yincongcyincong/go12306/action"
+	"github.com/yincongcyincong/go12306/utils"
 	_ "net/http/pprof"
 	"os"
 	"os/signal"

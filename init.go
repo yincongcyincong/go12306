@@ -2,9 +2,9 @@ package main
 
 import (
 	"github.com/cihub/seelog"
-	"github.com/tools/12306/conf"
-	http12306 "github.com/tools/12306/http"
-	"github.com/tools/12306/utils"
+	"github.com/yincongcyincong/go12306/conf"
+	http12306 "github.com/yincongcyincong/go12306/http"
+	"github.com/yincongcyincong/go12306/utils"
 	"log"
 	"net/http"
 	"strconv"

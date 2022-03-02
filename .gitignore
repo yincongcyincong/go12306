@@ -1,5 +1,6 @@
 .idea
 12306
+go12306
 conf/*.png
 *.DS_Store
 *.log

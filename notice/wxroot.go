@@ -3,7 +3,7 @@ package notice
 import (
 	"encoding/json"
 	"errors"
-	"github.com/tools/12306/utils"
+	"github.com/yincongcyincong/go12306/utils"
 )
 
 type WxRobotMsg struct {
