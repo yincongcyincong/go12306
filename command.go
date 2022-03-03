@@ -64,7 +64,7 @@ Search:
 		if err == nil {
 			break
 		} else {
-			time.Sleep(time.Duration(utils.GetRand(5500, 10000)) * time.Millisecond)
+			time.Sleep(time.Duration(utils.GetRand(3000, 7000)) * time.Millisecond)
 		}
 	}
 
@@ -275,7 +275,7 @@ func startCheckLogin() {
 		}()
 
 		timer := time.NewTicker(2 * time.Minute)
-		alTimer := time.NewTicker(15 * time.Minute)
+		alTimer := time.NewTicker(10 * time.Minute)
 		for {
 			select {
 			case <-timer.C:
