@@ -235,17 +235,16 @@ func createHashCode(token, body string) string {
 		switch par.par {
 		case slitPar:
 			token = slitToken(token)
-		case qaPar, qa2Par:
+		case qaPar, qa2Par, raPar:
 			token = qa(token)
-		case sha256Par, zaPar:
+		case sha256Par, yaPar:
 			token = sha256Token(token)
 		case reversePar:
 			token = reverse(token)
 		case changePar:
 			token = changeStr(token)
-		case encodePar:
+		case encodePar, zaPar:
 			token = encodeToken(token)
-		case raPar:
 		default:
 			seelog.Error("匹配类型查找失败")
 		}
@@ -265,7 +264,7 @@ func sha256Token(token string) string {
 }
 
 func findParIndex(body string) []*parIndex {
-	pars := []string{slitPar, sha256Par, qaPar, changePar, reversePar, zaPar, raPar, qa2Par, encodePar}
+	pars := []string{slitPar, sha256Par, qaPar, changePar, reversePar, zaPar, raPar, qa2Par, encodePar, yaPar}
 	res := make([]*parIndex, 0)
 	for _, par := range pars {
 		startIdx := 0

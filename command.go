@@ -40,6 +40,7 @@ func CommandStart() {
 
 	startCheckLogin()
 
+Reorder:
 	searchParam := new(module.SearchParam)
 	var trainStr, seatStr, passengerStr string
 	for i := 1; i < math.MaxInt64; i++ {
@@ -63,7 +64,7 @@ Search:
 		if err == nil {
 			break
 		} else {
-			time.Sleep(time.Duration(utils.GetRand(1500, 4000)) * time.Millisecond)
+			time.Sleep(time.Duration(utils.GetRand(5500, 10000)) * time.Millisecond)
 		}
 	}
 
@@ -77,6 +78,7 @@ Search:
 	if *wxrobot != "" {
 		notice.SendWxrootMessage(*wxrobot, fmt.Sprintf("车次：%s 购买成功, 请登陆12306查看", trainData.TrainNo))
 	}
+	goto Reorder
 }
 
 func getTrainInfo(searchParam *module.SearchParam, trainMap map[string]bool, seatSlice []string) (*module.TrainData, error) {
