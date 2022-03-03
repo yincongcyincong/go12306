@@ -49,7 +49,7 @@ Reorder:
 			break
 		}
 
-		time.Sleep(5 * time.Second)
+		time.Sleep(1 * time.Second)
 	}
 
 	// 开始轮训买票
@@ -64,7 +64,7 @@ Search:
 		if err == nil {
 			break
 		} else {
-			time.Sleep(time.Duration(utils.GetRand(3000, 7000)) * time.Millisecond)
+			time.Sleep(time.Duration(utils.GetRand(5000, 10000)) * time.Millisecond)
 		}
 	}
 
@@ -131,6 +131,9 @@ func getTrainInfo(searchParam *module.SearchParam, trainMap map[string]bool, sea
 func getUserInfo(searchParam *module.SearchParam, trainStr, seatStr, passengerStr *string) {
 	fmt.Println("请输入日期 起始站 到达站: ")
 	fmt.Scanf("%s %s %s", &searchParam.TrainDate, &searchParam.FromStationName, &searchParam.ToStationName)
+	if searchParam.TrainDate == "" || searchParam.FromStationName == "" || searchParam.ToStationName == "" {
+		return
+	}
 	searchParam.FromStation = conf.Station[searchParam.FromStationName]
 	searchParam.ToStation = conf.Station[searchParam.ToStationName]
 
