@@ -64,7 +64,7 @@ Search:
 		if err == nil {
 			break
 		} else {
-			time.Sleep(time.Duration(utils.GetRand(5000, 10000)) * time.Millisecond)
+			time.Sleep(time.Duration(utils.GetRand(conf.SearchInterval[0], conf.SearchInterval[1])) * time.Millisecond)
 		}
 	}
 
