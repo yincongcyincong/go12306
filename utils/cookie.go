@@ -203,7 +203,6 @@ func CreateLogDeviceParam() url.Values {
 	data.Set(getDeviceParam("touchSupport"), "99115dfb07133750ba677d055874de87")
 	token += "userAgentMozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/98.0." + webNo + ".109 Safari/537.36"
 	data.Set(getDeviceParam("userAgent"), "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/98.0."+webNo+".109 Safari/537.36")
-	cookie.cookie["User-Agent"] = conf.UserAgent
 	token += "webSmartID74a173cc6a9e7335c27eddd372be213a"
 	data.Set(getDeviceParam("webSmartID"), "74a173cc6a9e7335c27eddd372be213a")
 

@@ -66,7 +66,7 @@ func initCookieInfo() {
 		panic("获取设备信息失败")
 	}
 
-	conf.UserAgent = utils.GetCookieVal("User-Agent")
+	conf.SetUserAgent()
 }
 
 func initHttp() {
@@ -79,6 +79,7 @@ func initHttp() {
 
 	http.HandleFunc("/create-image", http12306.CreateImageReq)
 	http.HandleFunc("/login", http12306.QrLoginReq)
+	http.HandleFunc("/hb", http12306.StartHBReq)
 	http.HandleFunc("/logout", http12306.UserLogoutReq)
 	http.HandleFunc("/search-train", http12306.SearchTrain)
 	http.HandleFunc("/search-info", http12306.SearchInfo)

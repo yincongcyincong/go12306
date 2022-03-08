@@ -25,6 +25,7 @@ type TrainData struct {
 	ArrivalTime      string
 	DistanceTime     string
 	Status           string
+	IsCanNate 		 string
 	SeatInfo         map[string]string
 }
 
@@ -84,6 +85,7 @@ type Passenger struct {
 	PassengerUuid       string `json:"passenger_uuid"`
 	PassengerTicketStr  string
 	OldPassengerStr     string
+	PassengerInfo       string
 }
 
 type SubmitToken struct {
@@ -110,8 +112,8 @@ type SearchInfo struct {
 }
 
 type OrderParam struct {
-	TrainData     *TrainData      `json:"train_data"`
-	Passengers    []*Passenger    `json:"-"`
-	SearchParam   *SearchParam    `json:"search_param"`
+	TrainData    *TrainData      `json:"train_data"`
+	Passengers   []*Passenger    `json:"-"`
+	SearchParam  *SearchParam    `json:"search_param"`
 	PassengerMap map[string]bool `json:"passenger_name"`
 }

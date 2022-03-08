@@ -5,6 +5,10 @@ import (
 	"strings"
 )
 
+const (
+	confFile = "./conf/conf.ini"
+)
+
 var (
 	Station = map[string]string{}
 
@@ -80,20 +84,26 @@ var (
 	UserAgent = ""
 	WxRobot = ""
 	SearchInterval = [2]int{}
+	C *goconfig.ConfigFile
 )
 
 func InitConf(wxrobot string) {
-	c, err := goconfig.LoadConfigFile("./conf/conf.ini")
+	var err error
+	C, err = goconfig.LoadConfigFile(confFile)
 	if err != nil {
 		panic(err)
 	}
 
-	CDNs = c.MustValueArray("cdn", "ips", ",")
-	SearchInterval[0], err = c.Int("search_interval", "min")
+	CDNs = C.MustValueArray("cdn", "ips", ",")
+	SearchInterval[0], err = C.Int("search_interval", "min")
 	if err != nil {
 		panic(err)
 	}
-	SearchInterval[1], err = c.Int("search_interval", "max")
+	SearchInterval[1], err = C.Int("search_interval", "max")
+	if err != nil {
+		panic(err)
+	}
+	UserAgent, err = C.GetValue("user_agent", "user_agent")
 	if err != nil {
 		panic(err)
 	}
@@ -109,4 +119,9 @@ func InitConf(wxrobot string) {
 	}
 	WxRobot = wxrobot
 
+}
+
+func SetUserAgent() {
+	C.SetValue("user_agent", "user_agent", UserAgent)
+	goconfig.SaveConfigFile(C, confFile)
 }

@@ -56,6 +56,7 @@ func GetTrainInfo(searchParam *module.SearchParam) ([]*module.TrainData, error) 
 			sd.StartTime = resSlice[8]
 			sd.ArrivalTime = resSlice[9]
 			sd.DistanceTime = resSlice[10]
+			sd.IsCanNate = resSlice[37]
 
 			sd.SeatInfo = make(map[string]string)
 			sd.SeatInfo["特等座"] = resSlice[conf.SeatType["特等座"]]
@@ -126,8 +127,11 @@ func GetPassengers(submitToken *module.SubmitToken) (*module.PassengerRes, error
 			p.PassengerType, p.PassengerName, p.PassengerIdTypeCode, p.PassengerIdNo, p.MobileNo, p.AllEncStr)
 		oldPassengerStr := fmt.Sprintf("%s,%s,%s,%s_",
 			p.PassengerName, p.PassengerIdTypeCode, p.PassengerIdNo, p.PassengerType)
+		passengerInfo := fmt.Sprintf("1#%s#1#%s#%s;", p.PassengerName, p.PassengerIdNo,p.AllEncStr)
 		p.PassengerTicketStr = passengerTicketStr
 		p.OldPassengerStr = oldPassengerStr
+		p.PassengerInfo = passengerInfo
+
 	}
 
 	return res, nil

@@ -203,3 +203,83 @@ func SendMsg(w http.ResponseWriter, r *http.Request) {
 
 	utils.HTTPSuccResp(w, "")
 }
+
+func StartHBReq(w http.ResponseWriter, r *http.Request) {
+	searchParam := &module.SearchParam{
+		TrainDate:       "2022-03-11",
+		FromStation:     "BJP",
+		ToStation:       "TJP",
+		FromStationName: "北京",
+		ToStationName:   "天津",
+		SeatType:        "M",
+	}
+
+	trains, err := action.GetTrainInfo(searchParam)
+	if err != nil {
+		utils.HTTPFailResp(w, http.StatusInternalServerError, 1, err.Error(), "")
+		return
+	}
+
+	var trainData *module.TrainData
+	for _, train := range trains {
+		if train.SeatInfo["一等座"] == "无" && train.IsCanNate == "1" {
+			trainData = train
+			break
+		}
+	}
+	fmt.Println(fmt.Sprintf("%+v", trainData))
+
+	err = action.AfterNateChechFace(trainData, searchParam)
+	if err != nil {
+		utils.HTTPFailResp(w, http.StatusInternalServerError, 1, err.Error(), "")
+		return
+	}
+
+	_, err = action.AfterNateSuccRate(trainData, searchParam)
+	if err != nil {
+		utils.HTTPFailResp(w, http.StatusInternalServerError, 1, err.Error(), "")
+		return
+	}
+
+	err = action.CheckUser()
+	if err != nil {
+		utils.HTTPFailResp(w, http.StatusInternalServerError, 1, err.Error(), "")
+		return
+	}
+
+	err = action.AfterNateSubmitOrder(trainData, searchParam)
+	if err != nil {
+		utils.HTTPFailResp(w, http.StatusInternalServerError, 1, err.Error(), "")
+		return
+	}
+
+	submitToken := &module.SubmitToken {
+		Token: "",
+	}
+	passengers, err := action.GetPassengers(submitToken)
+	if err != nil {
+		utils.HTTPFailResp(w, http.StatusInternalServerError, 1, err.Error(), "")
+		return
+	}
+	pgs := passengers.Data.NormalPassengers[:0]
+
+	err = action.PassengerInit()
+	if err != nil {
+		utils.HTTPFailResp(w, http.StatusInternalServerError, 1, err.Error(), "")
+		return
+	}
+
+	err = action.AfterNateGetQueueNum()
+	if err != nil {
+		utils.HTTPFailResp(w, http.StatusInternalServerError, 1, err.Error(), "")
+		return
+	}
+
+	err = action.AfterNateConfirmHB(pgs, searchParam, trainData)
+	if err != nil {
+		utils.HTTPFailResp(w, http.StatusInternalServerError, 1, err.Error(), "")
+		return
+	}
+
+	utils.HTTPSuccResp(w, "候补成功")
+}
