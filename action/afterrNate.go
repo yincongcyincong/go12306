@@ -103,7 +103,6 @@ func AfterNateGetQueueNum() error {
 
 func AfterNateConfirmHB(passengers []*module.Passenger, searchParam *module.SearchParam, trainData *module.TrainData) error {
 
-	// url encode需要小心，会多处理
 	passengerInfo := ""
 	for _, p := range passengers {
 		passengerInfo = passengerInfo + p.PassengerInfo
@@ -112,28 +111,23 @@ func AfterNateConfirmHB(passengers []*module.Passenger, searchParam *module.Sear
 	data := make(url.Values)
 	data.Set("passengerInfo", passengerInfo)
 	data.Set("jzParam", "")
-	data.Set("hbTrain", fmt.Sprintf("%s,%s#", trainData.TrainNo, searchParam.SeatType))
+	data.Set("hbTrain", fmt.Sprintf("%s,%s#", trainData.TrainName, searchParam.SeatType))
 	data.Set("lkParam", "")
-	data.Set("sessionId", "000")
+	data.Set("sessionId", "")
 	data.Set("sig", "")
 	data.Set("scene", "")
 	data.Set("encryptedData", strconv.Itoa(rand.Intn(math.MaxInt64)))
-	data.Set("is_revceive_wseat", "Y")
-	data.Set("realize_limit_time_di", "360")
+	data.Set("if_receive_wseat", "Y")
+	data.Set("realize_limit_time_diff", "360") // 候补票距离开车前的截止兑换时间，单位: 分钟，默认: 360
 
-	confirmQueue := new(module.ConfirmQueueRes)
-	err := utils.Request(utils.ReplaceSpecailChar(data.Encode()), utils.GetCookieStr(), "https://kyfw.12306.cn/otn/afterNate/confirmHB", confirmQueue, map[string]string{"Referer": "https://kyfw.12306.cn/otn/confirmPassenger/initDc"})
+	confirmHB := new(module.AfterNatConfirm)
+	err := utils.Request(utils.ReplaceSpecailChar(data.Encode()), utils.GetCookieStr(), "https://kyfw.12306.cn/otn/afterNate/confirmHB", confirmHB, map[string]string{"Referer": "https://kyfw.12306.cn/otn/confirmPassenger/initDc"})
 	if err != nil {
 		return err
 	}
 
-	switch data := confirmQueue.Data.(type) {
-	case string:
-		return errors.New(data)
-	case module.ConfirmData:
-		if !data.SubmitStatus {
-			return errors.New(fmt.Sprintf("确认排队信息失败: %+v", confirmQueue.Data))
-		}
+	if !confirmHB.Status || !confirmHB.Data.Flag {
+		return errors.New(fmt.Sprintf("候补车票失败：%+v", confirmHB))
 	}
 
 	return nil

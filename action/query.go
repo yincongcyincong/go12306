@@ -44,6 +44,7 @@ func GetTrainInfo(searchParam *module.SearchParam) ([]*module.TrainData, error) 
 		resSlice := strings.Split(res, "|")
 		sd := new(module.TrainData)
 		sd.Status = resSlice[1]
+		sd.TrainName = resSlice[2]
 		sd.TrainNo = resSlice[3]
 		sd.FromStationName = searchRes.Data.Map[resSlice[6]]
 		sd.ToStationName = searchRes.Data.Map[resSlice[7]]

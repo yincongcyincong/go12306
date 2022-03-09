@@ -121,8 +121,7 @@ func GetQueueCount(submitToken *module.SubmitToken, searchParam *module.SearchPa
 }
 
 func ConfirmQueue(passengers []*module.Passenger, submitToken *module.SubmitToken, searchParam *module.SearchParam) error {
-
-	// url encode需要小心，会多处理
+	
 	passengerTicketStr := ""
 	oldPassengerStr := ""
 	for _, p := range passengers {
@@ -169,7 +168,6 @@ func ConfirmQueue(passengers []*module.Passenger, submitToken *module.SubmitToke
 
 func OrderWait(submitToken *module.SubmitToken) (*module.OrderWaitRes, error) {
 
-	// url encode需要小心，会多处理
 	var err error
 	orderWaitUrl := fmt.Sprintf("https://kyfw.12306.cn/otn/confirmPassenger/queryOrderWaitTime?random=%s&tourFlag=dc&_json_att=&REPEAT_SUBMIT_TOKEN=%s", strconv.Itoa(rand.Intn(math.MaxInt64)), submitToken.Token)
 	orderWaitRes := new(module.OrderWaitRes)
@@ -195,7 +193,6 @@ func OrderWait(submitToken *module.SubmitToken) (*module.OrderWaitRes, error) {
 
 func OrderResult(submitToken *module.SubmitToken, orderNo string) error {
 
-	// url encode需要小心，会多处理
 	var err error
 	data := make(url.Values)
 	data.Set("orderSequence_no", orderNo)

@@ -25,7 +25,8 @@ type TrainData struct {
 	ArrivalTime      string
 	DistanceTime     string
 	Status           string
-	IsCanNate 		 string
+	IsCanNate        string
+	TrainName        string
 	SeatInfo         map[string]string
 }
 

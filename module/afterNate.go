@@ -13,11 +13,11 @@ type ChechFace struct {
 }
 
 type SuccRate struct {
-	ValidateMessagesShowId string          `json:"validateMessagesShowId"`
-	Status                 bool            `json:"status"`
-	HTTPStatus             int             `json:"httpstatus"`
-	Messages               []string        `json:"messages"`
-	Data                   struct{
+	ValidateMessagesShowId string   `json:"validateMessagesShowId"`
+	Status                 bool     `json:"status"`
+	HTTPStatus             int      `json:"httpstatus"`
+	Messages               []string `json:"messages"`
+	Data                   struct {
 		Flag []*SuccRateFlag `json:"flag"`
 	} `json:"data"`
 }
@@ -65,4 +65,15 @@ type PassengerInit struct {
 	Status                 bool     `json:"status"`
 	HTTPStatus             int      `json:"httpstatus"`
 	Messages               []string `json:"messages"`
+}
+
+type AfterNatConfirm struct {
+	ValidateMessagesShowId string   `json:"validateMessagesShowId"`
+	Status                 bool     `json:"status"`
+	HTTPStatus             int      `json:"httpstatus"`
+	Messages               []string `json:"messages"`
+	Data                   struct {
+		Flag      bool   `json:"flag"`
+		ReserveNo string `json:"reserve_no"`
+	} `json:"data"`
 }

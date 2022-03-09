@@ -261,7 +261,7 @@ func StartHBReq(w http.ResponseWriter, r *http.Request) {
 		utils.HTTPFailResp(w, http.StatusInternalServerError, 1, err.Error(), "")
 		return
 	}
-	pgs := passengers.Data.NormalPassengers[:0]
+	pgs := passengers.Data.NormalPassengers[:1]
 
 	err = action.PassengerInit()
 	if err != nil {
