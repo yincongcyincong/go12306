@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/cihub/seelog"
-	"github.com/yincongcyincong/go12306/conf"
 	"github.com/yincongcyincong/go12306/module"
 	"io/ioutil"
 	"net"
@@ -15,9 +14,11 @@ import (
 	"time"
 )
 
-var client *http.Client
-var cdnMap = make(map[string]*http.Client)
-var cdnLock = sync.Mutex{}
+var (
+	client  *http.Client
+	cdnMap  = make(map[string]*http.Client)
+	cdnLock = sync.Mutex{}
+)
 
 func GetClient() *http.Client {
 	if client == nil {
@@ -75,7 +76,7 @@ func Request(data string, cookieStr, url string, res interface{}, headers map[st
 	}
 	req.Header.Set("Cookie", cookieStr)
 	req.Header.Set("Content-Type", "application/x-www-form-urlencoded; charset=UTF-8")
-	req.Header.Set("User-Agent", conf.UserAgent)
+	req.Header.Set("User-Agent", UserAgent)
 	req.Header.Set("Host", "kyfw.12306.cn")
 	req.Header.Set("X-Requested-With", "XMLHttpRequest")
 	req.Header.Set("Origin", "https://kyfw.12306.cn")
@@ -117,7 +118,7 @@ func RequestGet(cookieStr, url string, res interface{}, headers map[string]strin
 	}
 	req.Header.Set("Cookie", cookieStr)
 	req.Header.Set("Content-Type", "application/x-www-form-urlencoded; charset=UTF-8")
-	req.Header.Set("User-Agent", conf.UserAgent)
+	req.Header.Set("User-Agent", UserAgent)
 	req.Header.Set("Host", "kyfw.12306.cn")
 	req.Header.Set("X-Requested-With", "XMLHttpRequest")
 	req.Header.Set("Origin", "https://kyfw.12306.cn")
@@ -158,7 +159,7 @@ func RequestGetWithoutJson(cookieStr, url string, headers map[string]string) ([]
 	}
 	req.Header.Set("Cookie", cookieStr)
 	req.Header.Set("Content-Type", "application/x-www-form-urlencoded; charset=UTF-8")
-	req.Header.Set("User-Agent", conf.UserAgent)
+	req.Header.Set("User-Agent", UserAgent)
 	req.Header.Set("Host", "kyfw.12306.cn")
 	req.Header.Set("X-Requested-With", "XMLHttpRequest")
 	req.Header.Set("Origin", "https://kyfw.12306.cn")
@@ -194,7 +195,7 @@ func RequestGetWithCDN(cookieStr, url string, res interface{}, headers map[strin
 	}
 	req.Header.Set("Cookie", cookieStr)
 	req.Header.Set("Content-Type", "application/x-www-form-urlencoded; charset=UTF-8")
-	req.Header.Set("User-Agent", conf.UserAgent)
+	req.Header.Set("User-Agent", UserAgent)
 	req.Header.Set("Host", "kyfw.12306.cn")
 	req.Header.Set("X-Requested-With", "XMLHttpRequest")
 	req.Header.Set("Origin", "https://kyfw.12306.cn")
@@ -225,7 +226,6 @@ func RequestGetWithCDN(cookieStr, url string, res interface{}, headers map[strin
 	// 添加cookie
 	setCookies := resp.Header.Values("Set-Cookie")
 	AddCookieStr(setCookies)
-
 
 	return nil
 }

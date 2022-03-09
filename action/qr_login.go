@@ -5,7 +5,6 @@ import (
 	"errors"
 	"fmt"
 	"github.com/cihub/seelog"
-	"github.com/yincongcyincong/go12306/conf"
 	"github.com/yincongcyincong/go12306/module"
 	"github.com/yincongcyincong/go12306/utils"
 	"io/fs"
@@ -143,7 +142,7 @@ func CheckLogin() bool {
 	if err != nil {
 		return false
 	}
-	conf.QueryUrl = confRes.Data.QueryUrl
+	utils.QueryUrl = confRes.Data.QueryUrl
 
 	return confRes.Data.IsLogin == "Y"
 }

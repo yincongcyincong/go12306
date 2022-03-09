@@ -25,7 +25,7 @@ func main() {
 	select {
 	case <-sigs:
 		seelog.Info("用户登出")
-		utils.WriteCookieToFile()
+		utils.SaveConf()
 		action.LoginOut()
 	}
 }

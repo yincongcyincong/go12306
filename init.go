@@ -2,7 +2,6 @@ package main
 
 import (
 	"github.com/cihub/seelog"
-	"github.com/yincongcyincong/go12306/conf"
 	http12306 "github.com/yincongcyincong/go12306/http"
 	"github.com/yincongcyincong/go12306/utils"
 	"log"
@@ -13,17 +12,21 @@ import (
 
 func Init() {
 	initLog()
-	conf.InitConf(*wxrobot)
-	initCookieInfo()
-
-	go utils.InitBlacklist()
-	go utils.InitAvailableCDN()
-	go initHttp()
+	initUtil()
+	initHttp()
 
 	if *runType == "command" {
 		go CommandStart()
 	}
 }
+
+
+func initUtil() {
+	initCookieInfo()
+	utils.InitBlacklist()
+	utils.InitAvailableCDN()
+}
+
 
 func initLog() {
 	logType := `<console/>`
@@ -50,11 +53,7 @@ func initLog() {
 
 func initCookieInfo() {
 	// 用户自己设置设置device信息
-	err := utils.ReadCookieFromFile()
-	if err != nil {
-		seelog.Error("read cookie file fail: ", err)
-	}
-
+	utils.InitConf(*wxrobot)
 	railExpStr := utils.GetCookieVal("RAIL_EXPIRATION")
 	railExp, _ := strconv.Atoi(railExpStr)
 	if railExp <= int(time.Now().Unix()*1000) || *mustDevice == "1" {
@@ -66,29 +65,31 @@ func initCookieInfo() {
 		panic("获取设备信息失败")
 	}
 
-	conf.SetUserAgent()
+	utils.SaveConf()
 }
 
 func initHttp() {
-	defer func() {
-		if err := recover(); err != nil {
-			seelog.Error(err)
-			seelog.Flush()
+	go func() {
+		defer func() {
+			if err := recover(); err != nil {
+				seelog.Error(err)
+				seelog.Flush()
+			}
+		}()
+
+		http.HandleFunc("/create-image", http12306.CreateImageReq)
+		http.HandleFunc("/login", http12306.QrLoginReq)
+		http.HandleFunc("/hb", http12306.StartHBReq)
+		http.HandleFunc("/logout", http12306.UserLogoutReq)
+		http.HandleFunc("/search-train", http12306.SearchTrain)
+		http.HandleFunc("/search-info", http12306.SearchInfo)
+		http.HandleFunc("/order-view", http12306.OrderView)
+		http.HandleFunc("/order", http12306.IsLogin(http12306.StartOrderReq))
+		http.HandleFunc("/re-login", http12306.ReLogin)
+		http.HandleFunc("/", http12306.LoginView)
+		http.HandleFunc("/send-msg", http12306.SendMsg)
+		if err := http.ListenAndServe(":28178", nil); err != nil {
+			log.Panicln(err)
 		}
 	}()
-
-	http.HandleFunc("/create-image", http12306.CreateImageReq)
-	http.HandleFunc("/login", http12306.QrLoginReq)
-	http.HandleFunc("/hb", http12306.StartHBReq)
-	http.HandleFunc("/logout", http12306.UserLogoutReq)
-	http.HandleFunc("/search-train", http12306.SearchTrain)
-	http.HandleFunc("/search-info", http12306.SearchInfo)
-	http.HandleFunc("/order-view", http12306.OrderView)
-	http.HandleFunc("/order", http12306.IsLogin(http12306.StartOrderReq))
-	http.HandleFunc("/re-login", http12306.ReLogin)
-	http.HandleFunc("/", http12306.LoginView)
-	http.HandleFunc("/send-msg", http12306.SendMsg)
-	if err := http.ListenAndServe(":28178", nil); err != nil {
-		log.Panicln(err)
-	}
 }

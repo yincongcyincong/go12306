@@ -3,7 +3,6 @@ package http
 import (
 	"fmt"
 	"github.com/yincongcyincong/go12306/action"
-	"github.com/yincongcyincong/go12306/conf"
 	"github.com/yincongcyincong/go12306/module"
 	"github.com/yincongcyincong/go12306/notice"
 	"github.com/yincongcyincong/go12306/utils"
@@ -52,7 +51,7 @@ func QrLoginReq(w http.ResponseWriter, r *http.Request) {
 
 func UserLogoutReq(w http.ResponseWriter, r *http.Request) {
 	// cookie写入文件
-	utils.WriteCookieToFile()
+	utils.SaveConf()
 	err := action.LoginOut()
 	if err != nil {
 		utils.HTTPFailResp(w, http.StatusInternalServerError, 1, err.Error(), "")
@@ -76,9 +75,9 @@ func SearchInfo(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	res.Passengers = passengers.Data.NormalPassengers
-	res.Station = conf.Station
-	res.PassengerType = conf.PassengerType
-	res.OrderSeatType = conf.OrderSeatType
+	res.Station = utils.Station
+	res.PassengerType = utils.PassengerType
+	res.OrderSeatType = utils.OrderSeatType
 
 	utils.HTTPSuccResp(w, res)
 }
@@ -195,7 +194,7 @@ func LoginView(w http.ResponseWriter, r *http.Request) {
 }
 
 func SendMsg(w http.ResponseWriter, r *http.Request) {
-	err := notice.SendWxrootMessage(conf.WxRobot, "车票购买成功")
+	err := notice.SendWxrootMessage(utils.WxRobot, "车票购买成功")
 	if err != nil {
 		utils.HTTPFailResp(w, http.StatusInternalServerError, 1, err.Error(), "")
 		return

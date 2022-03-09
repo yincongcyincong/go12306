@@ -7,10 +7,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/cihub/seelog"
-	"github.com/yincongcyincong/go12306/conf"
 	"github.com/yincongcyincong/go12306/module"
-	"io/fs"
-	"io/ioutil"
 	"net/url"
 	"regexp"
 	"sort"
@@ -82,7 +79,7 @@ func GetDeviceInfo() {
 		}
 	}
 
-	seelog.Error("生成device信息失败, 请手动把cookie信息复制到./conf/cookie文件中")
+	seelog.Error("生成device信息失败, 请手动把cookie信息复制到./conf/conf.ini文件中")
 
 }
 
@@ -126,30 +123,9 @@ func GetCookieStr() string {
 	return res
 }
 
-func WriteCookieToFile() {
-	cookieStr := GetCookieStr()
-	cookiePath := "./conf/cookie"
-	err := ioutil.WriteFile(cookiePath, []byte(cookieStr), fs.ModePerm)
-	if err != nil {
-		seelog.Error(err)
-	}
-}
-
-func ReadCookieFromFile() error {
-
-	cookiePath := "./conf/cookie"
-	cookieByte, err := ioutil.ReadFile(cookiePath)
-	if err != nil {
-		return err
-	}
-
-	AddCookieStr([]string{string(cookieByte)})
-	return nil
-}
-
 func CreateLogDeviceParam() url.Values {
 	webNo := strconv.Itoa(GetRand(5000, 7000))
-	conf.UserAgent = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/98.0."+webNo+".109 Safari/537.36"
+	UserAgent = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/98.0."+webNo+".109 Safari/537.36"
 	body, err := RequestGetWithoutJson("", "https://kyfw.12306.cn/otn/HttpZF/GetJS", nil)
 	if err != nil {
 		seelog.Error(err)
@@ -213,7 +189,7 @@ func CreateLogDeviceParam() url.Values {
 }
 
 func getDeviceParam(param string) string {
-	if paramRef, ok := conf.LogDeviceMap[param]; ok {
+	if paramRef, ok := LogDeviceMap[param]; ok {
 		return paramRef
 	}
 

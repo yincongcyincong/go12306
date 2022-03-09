@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"github.com/cihub/seelog"
 	"github.com/yincongcyincong/go12306/action"
-	"github.com/yincongcyincong/go12306/conf"
 	"github.com/yincongcyincong/go12306/module"
 	"github.com/yincongcyincong/go12306/notice"
 	"github.com/yincongcyincong/go12306/utils"
@@ -64,7 +63,7 @@ Search:
 		if err == nil {
 			break
 		} else {
-			time.Sleep(time.Duration(utils.GetRand(conf.SearchInterval[0], conf.SearchInterval[1])) * time.Millisecond)
+			time.Sleep(time.Duration(utils.GetRand(utils.SearchInterval[0], utils.SearchInterval[1])) * time.Millisecond)
 		}
 	}
 
@@ -104,7 +103,7 @@ func getTrainInfo(searchParam *module.SearchParam, trainMap map[string]bool, sea
 			for _, s := range seatSlice {
 				if t.SeatInfo[s] != "" && t.SeatInfo[s] != "无" {
 					trainData = t
-					searchParam.SeatType = conf.OrderSeatType[s]
+					searchParam.SeatType = utils.OrderSeatType[s]
 					seelog.Infof("%s %s 数量: %s", t.TrainNo, s, t.SeatInfo[s])
 					break
 				}
@@ -134,8 +133,8 @@ func getUserInfo(searchParam *module.SearchParam, trainStr, seatStr, passengerSt
 	if searchParam.TrainDate == "" || searchParam.FromStationName == "" || searchParam.ToStationName == "" {
 		return
 	}
-	searchParam.FromStation = conf.Station[searchParam.FromStationName]
-	searchParam.ToStation = conf.Station[searchParam.ToStationName]
+	searchParam.FromStation = utils.Station[searchParam.FromStationName]
+	searchParam.ToStation = utils.Station[searchParam.ToStationName]
 
 	trains, err := action.GetTrainInfo(searchParam)
 	if err != nil {

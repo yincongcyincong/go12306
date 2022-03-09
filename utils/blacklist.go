@@ -17,17 +17,19 @@ var bl  = &blacklist{
 }
 
 func InitBlacklist() {
-	defer func() {
-		if err := recover(); err != nil {
-			seelog.Error(err)
-			seelog.Flush()
+	go func() {
+		defer func() {
+			if err := recover(); err != nil {
+				seelog.Error(err)
+				seelog.Flush()
+			}
+		}()
+		ticker := time.NewTicker(1 * time.Second)
+		for {
+			<- ticker.C
+			deleteBlackList()
 		}
 	}()
-	ticker := time.NewTicker(1 * time.Second)
-	for {
-		<- ticker.C
-		deleteBlackList()
-	}
 }
 
 func InBlackList(trainNo string) bool {

@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/yincongcyincong/go12306/conf"
 	"github.com/yincongcyincong/go12306/module"
 	"github.com/yincongcyincong/go12306/utils"
 	"net/url"
@@ -29,7 +28,7 @@ func GetTrainInfo(searchParam *module.SearchParam) ([]*module.TrainData, error) 
 	}
 
 	err = utils.RequestGetWithCDN(utils.GetCookieStr(), fmt.Sprintf("https://kyfw.12306.cn/otn/%s?leftTicketDTO.train_date=%s&leftTicketDTO.from_station=%s&leftTicketDTO.to_station=%s&purpose_codes=ADULT",
-		conf.QueryUrl, searchParam.TrainDate, searchParam.FromStation, searchParam.ToStation), searchRes, nil, cdn)
+		utils.QueryUrl, searchParam.TrainDate, searchParam.FromStation, searchParam.ToStation), searchRes, nil, cdn)
 	if err != nil {
 		utils.AddBlackList(cdn)
 		return nil, err
@@ -60,16 +59,16 @@ func GetTrainInfo(searchParam *module.SearchParam) ([]*module.TrainData, error) 
 			sd.IsCanNate = resSlice[37]
 
 			sd.SeatInfo = make(map[string]string)
-			sd.SeatInfo["特等座"] = resSlice[conf.SeatType["特等座"]]
-			sd.SeatInfo["商务座"] = resSlice[conf.SeatType["商务座"]]
-			sd.SeatInfo["一等座"] = resSlice[conf.SeatType["一等座"]]
-			sd.SeatInfo["二等座"] = resSlice[conf.SeatType["二等座"]]
-			sd.SeatInfo["软卧"] = resSlice[conf.SeatType["软卧"]]
-			sd.SeatInfo["硬卧"] = resSlice[conf.SeatType["硬卧"]]
-			sd.SeatInfo["硬座"] = resSlice[conf.SeatType["硬座"]]
-			sd.SeatInfo["无座"] = resSlice[conf.SeatType["无座"]]
-			sd.SeatInfo["动卧"] = resSlice[conf.SeatType["动卧"]]
-			sd.SeatInfo["软座"] = resSlice[conf.SeatType["软座"]]
+			sd.SeatInfo["特等座"] = resSlice[utils.SeatType["特等座"]]
+			sd.SeatInfo["商务座"] = resSlice[utils.SeatType["商务座"]]
+			sd.SeatInfo["一等座"] = resSlice[utils.SeatType["一等座"]]
+			sd.SeatInfo["二等座"] = resSlice[utils.SeatType["二等座"]]
+			sd.SeatInfo["软卧"] = resSlice[utils.SeatType["软卧"]]
+			sd.SeatInfo["硬卧"] = resSlice[utils.SeatType["硬卧"]]
+			sd.SeatInfo["硬座"] = resSlice[utils.SeatType["硬座"]]
+			sd.SeatInfo["无座"] = resSlice[utils.SeatType["无座"]]
+			sd.SeatInfo["动卧"] = resSlice[utils.SeatType["动卧"]]
+			sd.SeatInfo["软座"] = resSlice[utils.SeatType["软座"]]
 		}
 
 		searchDatas[i] = sd
