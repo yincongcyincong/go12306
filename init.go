@@ -22,7 +22,20 @@ func Init() {
 
 
 func initUtil() {
-	initCookieInfo()
+	// 用户自己设置设置device信息
+	utils.InitConf(*wxrobot)
+	railExpStr := utils.GetCookieVal("RAIL_EXPIRATION")
+	railExp, _ := strconv.Atoi(railExpStr)
+	if railExp <= int(time.Now().Unix()*1000) || *mustDevice == "1" {
+		seelog.Info("开始重新获取设备信息")
+		utils.GetDeviceInfo()
+	}
+
+	if utils.GetCookieVal("RAIL_DEVICEID") == "" || utils.GetCookieVal("RAIL_EXPIRATION") == "" {
+		panic("获取设备信息失败")
+	}
+
+	utils.SaveConf()
 	utils.InitBlacklist()
 	utils.InitAvailableCDN()
 }
@@ -49,23 +62,6 @@ func initLog() {
 	if err != nil {
 		log.Panicln(err)
 	}
-}
-
-func initCookieInfo() {
-	// 用户自己设置设置device信息
-	utils.InitConf(*wxrobot)
-	railExpStr := utils.GetCookieVal("RAIL_EXPIRATION")
-	railExp, _ := strconv.Atoi(railExpStr)
-	if railExp <= int(time.Now().Unix()*1000) || *mustDevice == "1" {
-		seelog.Info("开始重新获取设备信息")
-		utils.GetDeviceInfo()
-	}
-
-	if utils.GetCookieVal("RAIL_DEVICEID") == "" || utils.GetCookieVal("RAIL_EXPIRATION") == "" {
-		panic("获取设备信息失败")
-	}
-
-	utils.SaveConf()
 }
 
 func initHttp() {
