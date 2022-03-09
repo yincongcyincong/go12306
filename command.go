@@ -42,8 +42,9 @@ func CommandStart() {
 Reorder:
 	searchParam := new(module.SearchParam)
 	var trainStr, seatStr, passengerStr string
+	isNate := "0"
 	for i := 1; i < math.MaxInt64; i++ {
-		getUserInfo(searchParam, &trainStr, &seatStr, &passengerStr)
+		getUserInfo(searchParam, &trainStr, &seatStr, &passengerStr, &isNate)
 		if trainStr != "" && seatStr != "" && passengerStr != "" {
 			break
 		}
@@ -58,8 +59,9 @@ Reorder:
 
 Search:
 	var trainData *module.TrainData
+	var isAfterNate bool
 	for i := 0; i < math.MaxInt64; i++ {
-		trainData, err = getTrainInfo(searchParam, trainMap, seatSlice)
+		trainData, isAfterNate, err = getTrainInfo(searchParam, trainMap, seatSlice, isNate)
 		if err == nil {
 			break
 		} else {
@@ -67,8 +69,15 @@ Search:
 		}
 	}
 
-	seelog.Info("开始购买", trainData.TrainNo)
-	err = startOrder(searchParam, trainData, passengerMap)
+
+	if isAfterNate {
+		seelog.Info("开始候补", trainData.TrainNo)
+		err = startAfterNate(searchParam, trainData, passengerMap)
+	} else {
+		seelog.Info("开始购买", trainData.TrainNo)
+		err = startOrder(searchParam, trainData, passengerMap)
+	}
+
 	if err != nil {
 		utils.AddBlackList(trainData.TrainNo)
 		goto Search
@@ -80,7 +89,9 @@ Search:
 	goto Reorder
 }
 
-func getTrainInfo(searchParam *module.SearchParam, trainMap map[string]bool, seatSlice []string) (*module.TrainData, error) {
+func getTrainInfo(searchParam *module.SearchParam, trainMap map[string]bool, seatSlice []string, isNate string) (*module.TrainData, bool, error) {
+	// 如果在晚上11点到早上5点之间，停止抢票，只自动登陆
+	waitToOrder()
 
 	var err error
 	searchParam.SeatType = ""
@@ -89,7 +100,7 @@ func getTrainInfo(searchParam *module.SearchParam, trainMap map[string]bool, sea
 	trains, err := action.GetTrainInfo(searchParam)
 	if err != nil {
 		seelog.Errorf("查询车站失败:%v", err)
-		return nil, err
+		return nil, false, err
 	}
 
 	for _, t := range trains {
@@ -105,29 +116,43 @@ func getTrainInfo(searchParam *module.SearchParam, trainMap map[string]bool, sea
 					trainData = t
 					searchParam.SeatType = utils.OrderSeatType[s]
 					seelog.Infof("%s %s 数量: %s", t.TrainNo, s, t.SeatInfo[s])
-					break
+					return trainData, false, nil
 				}
 				seelog.Infof("%s %s 数量: %s", t.TrainNo, s, t.SeatInfo[s])
 			}
+		}
+	}
 
-			if searchParam.SeatType != "" {
-				break
+	// 判断是否可以候补
+	if (isNate == "1" || isNate == "是") && searchParam.SeatType == "" {
+		for _, t := range trains {
+			// 在选中的，但是不在小黑屋里面
+			if utils.InBlackList(t.TrainNo) {
+				seelog.Info(t.TrainNo, "在小黑屋，需等待60s")
+				continue
+			}
+
+			if trainMap[t.TrainNo] {
+				for _, s := range seatSlice {
+					if t.SeatInfo[s] == "无" && t.IsCanNate == "1" {
+						trainData = t
+						searchParam.SeatType = utils.OrderSeatType[s]
+						return trainData, true, nil
+					}
+				}
 			}
 		}
 	}
 
 	if trainData == nil || searchParam.SeatType == "" {
 		seelog.Info("暂无车票可以购买")
-		return nil, errors.New("暂无车票可以购买")
+		return nil, false, errors.New("暂无车票可以购买")
 	}
 
-	// 如果在晚上11点到早上5点之间，停止抢票，只自动登陆
-	waitToOrder()
-
-	return trainData, nil
+	return trainData, false, nil
 }
 
-func getUserInfo(searchParam *module.SearchParam, trainStr, seatStr, passengerStr *string) {
+func getUserInfo(searchParam *module.SearchParam, trainStr, seatStr, passengerStr, isNate *string) {
 	fmt.Println("请输入日期 起始站 到达站: ")
 	fmt.Scanf("%s %s %s", &searchParam.TrainDate, &searchParam.FromStationName, &searchParam.ToStationName)
 	if searchParam.TrainDate == "" || searchParam.FromStationName == "" || searchParam.ToStationName == "" {
@@ -169,6 +194,9 @@ func getUserInfo(searchParam *module.SearchParam, trainStr, seatStr, passengerSt
 	fmt.Println("请输入乘客姓名(多个#分隔): ")
 	fmt.Scanf("%s", passengerStr)
 
+	fmt.Println("是否候补(0：否，1：是): ")
+	fmt.Scanf("%s", isNate)
+
 	return
 }
 
@@ -176,6 +204,7 @@ func startOrder(searchParam *module.SearchParam, trainData *module.TrainData, pa
 	err := action.GetLoginData()
 	if err != nil {
 		seelog.Errorf("自动登陆失败：%v", err)
+		return err
 	}
 
 	err = action.CheckUser()
@@ -251,6 +280,74 @@ func startOrder(searchParam *module.SearchParam, trainData *module.TrainData, pa
 	}
 
 	seelog.Infof("购买成功，订单号：%s", orderWaitRes.Data.OrderId)
+	return nil
+}
+
+func startAfterNate(searchParam *module.SearchParam, trainData *module.TrainData, passengerMap map[string]bool) error {
+	err := action.GetLoginData()
+	if err != nil {
+		seelog.Errorf("自动登陆失败：%v", err)
+		return err
+	}
+
+	err = action.AfterNateChechFace(trainData, searchParam)
+	if err != nil {
+		seelog.Errorf("人脸验证失败：%v", err)
+		return err
+	}
+
+	_, err = action.AfterNateSuccRate(trainData, searchParam)
+	if err != nil {
+		seelog.Errorf("获取候补成功率失败：%v", err)
+		return err
+	}
+
+	err = action.CheckUser()
+	if err != nil {
+		seelog.Errorf("检查用户状态失败：%v", err)
+		return err
+	}
+
+	err = action.AfterNateSubmitOrder(trainData, searchParam)
+	if err != nil {
+		seelog.Errorf("提交候补订单失败：%v", err)
+		return err
+	}
+
+	submitToken := &module.SubmitToken {
+		Token: "",
+	}
+	passengers, err := action.GetPassengers(submitToken)
+	if err != nil {
+		seelog.Errorf("获取乘客失败：%v", err)
+		return err
+	}
+	buyPassengers := make([]*module.Passenger, 0)
+	for _, p := range passengers.Data.NormalPassengers {
+		if passengerMap[p.PassengerName] {
+			buyPassengers = append(buyPassengers, p)
+		}
+	}
+
+	err = action.PassengerInit()
+	if err != nil {
+		seelog.Errorf("初始化乘客信息失败：%v", err)
+		return err
+	}
+
+	err = action.AfterNateGetQueueNum()
+	if err != nil {
+		seelog.Errorf("获取候补排队信息失败：%v", err)
+		return err
+	}
+
+	confirmRes, err := action.AfterNateConfirmHB(buyPassengers, searchParam, trainData)
+	if err != nil {
+		seelog.Errorf("提交订单失败：%v", err)
+		return err
+	}
+
+	seelog.Infof("候补成功，订单号：%s", confirmRes.Data.ReserveNo)
 	return nil
 }
 

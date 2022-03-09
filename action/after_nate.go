@@ -101,7 +101,7 @@ func AfterNateGetQueueNum() error {
 	return nil
 }
 
-func AfterNateConfirmHB(passengers []*module.Passenger, searchParam *module.SearchParam, trainData *module.TrainData) error {
+func AfterNateConfirmHB(passengers []*module.Passenger, searchParam *module.SearchParam, trainData *module.TrainData) (*module.AfterNatConfirm, error) {
 
 	passengerInfo := ""
 	for _, p := range passengers {
@@ -123,14 +123,14 @@ func AfterNateConfirmHB(passengers []*module.Passenger, searchParam *module.Sear
 	confirmHB := new(module.AfterNatConfirm)
 	err := utils.Request(utils.ReplaceSpecailChar(data.Encode()), utils.GetCookieStr(), "https://kyfw.12306.cn/otn/afterNate/confirmHB", confirmHB, map[string]string{"Referer": "https://kyfw.12306.cn/otn/confirmPassenger/initDc"})
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	if !confirmHB.Status || !confirmHB.Data.Flag {
-		return errors.New(fmt.Sprintf("候补车票失败：%+v", confirmHB))
+		return nil, errors.New(fmt.Sprintf("候补车票失败：%+v", confirmHB))
 	}
 
-	return nil
+	return confirmHB, nil
 }
 
 

@@ -274,7 +274,7 @@ func StartHBReq(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = action.AfterNateConfirmHB(pgs, searchParam, trainData)
+	_, err = action.AfterNateConfirmHB(pgs, searchParam, trainData)
 	if err != nil {
 		utils.HTTPFailResp(w, http.StatusInternalServerError, 1, err.Error(), "")
 		return
