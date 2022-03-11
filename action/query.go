@@ -122,17 +122,43 @@ func GetPassengers(submitToken *module.SubmitToken) (*module.PassengerRes, error
 		return nil, errors.New(fmt.Sprintf("获取乘客信息失败: %+v", res))
 	}
 
+	extraPassenger := make([]*module.Passenger, 0)
 	for _, p := range res.Data.NormalPassengers {
 		passengerTicketStr := fmt.Sprintf("0,%s,%s,%s,%s,%s,N,%s",
 			p.PassengerType, p.PassengerName, p.PassengerIdTypeCode, p.PassengerIdNo, p.MobileNo, p.AllEncStr)
 		oldPassengerStr := fmt.Sprintf("%s,%s,%s,%s_",
 			p.PassengerName, p.PassengerIdTypeCode, p.PassengerIdNo, p.PassengerType)
-		passengerInfo := fmt.Sprintf("1#%s#1#%s#%s;", p.PassengerName, p.PassengerIdNo,p.AllEncStr)
+		passengerInfo := fmt.Sprintf("%s#%s#1#%s#%s;",p.PassengerType, p.PassengerName, p.PassengerIdNo,p.AllEncStr)
 		p.PassengerTicketStr = passengerTicketStr
 		p.OldPassengerStr = oldPassengerStr
 		p.PassengerInfo = passengerInfo
+		p.Alias = p.PassengerName
+
+		// 乘客类型：1 - 成人票，2 - 儿童票，3 - 学生票，4 - 残军票
+		if p.PassengerType != "1" {
+			tmpPassenger := *p
+			tmpPassenger.PassengerTicketStr = fmt.Sprintf("0,%s,%s,%s,%s,%s,N,%s",
+				"1", p.PassengerName, p.PassengerIdTypeCode, p.PassengerIdNo, p.MobileNo, p.AllEncStr)
+			tmpPassenger.OldPassengerStr = fmt.Sprintf("%s,%s,%s,%s_",
+				p.PassengerName, p.PassengerIdTypeCode, p.PassengerIdNo, "1")
+			tmpPassenger.PassengerInfo = fmt.Sprintf("%s#%s#1#%s#%s;","1", p.PassengerName, p.PassengerIdNo,p.AllEncStr)
+
+			// 把不是特殊票的名称改成特殊票
+			switch p.PassengerType {
+			case "2":
+				p.Alias = p.PassengerName + "-儿童"
+			case "3":
+				p.Alias = p.PassengerName + "-学生"
+			case "4":
+				p.Alias = p.PassengerName + "-残军"
+			default:
+				continue
+			}
+			extraPassenger = append(extraPassenger, &tmpPassenger)
+		}
 
 	}
+	res.Data.NormalPassengers = append(res.Data.NormalPassengers, extraPassenger...)
 
 	return res, nil
 

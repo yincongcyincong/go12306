@@ -188,7 +188,7 @@ func getUserInfo(searchParam *module.SearchParam, trainStr, seatStr, passengerSt
 		return
 	}
 	for _, p := range passengers.Data.NormalPassengers {
-		fmt.Println(fmt.Sprintf("乘客姓名：%s", p.PassengerName))
+		fmt.Println(fmt.Sprintf("乘客：%s", p.Alias))
 	}
 
 	fmt.Println("请输入乘客姓名(多个#分隔): ")
@@ -232,7 +232,7 @@ func startOrder(searchParam *module.SearchParam, trainData *module.TrainData, pa
 	}
 	buyPassengers := make([]*module.Passenger, 0)
 	for _, p := range passengers.Data.NormalPassengers {
-		if passengerMap[p.PassengerName] {
+		if passengerMap[p.Alias] {
 			buyPassengers = append(buyPassengers, p)
 		}
 	}
@@ -324,7 +324,7 @@ func startAfterNate(searchParam *module.SearchParam, trainData *module.TrainData
 	}
 	buyPassengers := make([]*module.Passenger, 0)
 	for _, p := range passengers.Data.NormalPassengers {
-		if passengerMap[p.PassengerName] {
+		if passengerMap[p.Alias] {
 			buyPassengers = append(buyPassengers, p)
 		}
 	}

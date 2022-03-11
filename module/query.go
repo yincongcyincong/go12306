@@ -87,6 +87,7 @@ type Passenger struct {
 	PassengerTicketStr  string
 	OldPassengerStr     string
 	PassengerInfo       string
+	Alias               string
 }
 
 type SubmitToken struct {
