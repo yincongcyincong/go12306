@@ -1,6 +1,8 @@
 package utils
 
 import (
+	"bytes"
+	"image/png"
 	"math/rand"
 	"strings"
 )
@@ -40,4 +42,32 @@ func ReplaceChar(str string) string {
 	str = strings.Replace(str, "%2C", ",", -1)
 
 	return str
+}
+
+func QrToString(img []byte) []string {
+
+	imageByte := bytes.NewBuffer(img)
+	image, err := png.Decode(imageByte)
+	if err != nil {
+		return []string{}
+	}
+	rectangle := image.Bounds()
+
+	res := make([]string, rectangle.Max.Y)
+	for i := rectangle.Min.Y; i < rectangle.Max.Y; i++ {
+		for j := rectangle.Min.X; j < rectangle.Max.X; j++ {
+			color := image.At(i, j)
+			r, g, b, _ := color.RGBA()
+			r = r >> 8
+			g = g >> 8
+			b = b >> 8
+			if r == 255 && g == 255 && b == 255 {
+				res[i] += "\u2588"
+			} else {
+				res[i] += " "
+			}
+		}
+	}
+
+	return res
 }

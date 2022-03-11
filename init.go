@@ -32,7 +32,7 @@ func initUtil() {
 	}
 
 	if utils.GetCookieVal("RAIL_DEVICEID") == "" || utils.GetCookieVal("RAIL_EXPIRATION") == "" {
-		panic("获取设备信息失败")
+		panic("生成device信息失败, 请手动把cookie信息复制到./conf/conf.ini文件中")
 	}
 
 	utils.SaveConf()

@@ -2,10 +2,12 @@ package utils
 
 import (
 	"bytes"
+	"context"
 	"crypto/sha256"
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
+	"github.com/chromedp/chromedp"
 	"github.com/cihub/seelog"
 	"github.com/yincongcyincong/go12306/module"
 	"net/url"
@@ -79,8 +81,11 @@ func GetDeviceInfo() {
 		}
 	}
 
-	seelog.Error("生成device信息失败, 请手动把cookie信息复制到./conf/conf.ini文件中")
-
+	// 杀手锏自动启动chrome获取
+	err := GetByChromdp()
+	if err != nil {
+		seelog.Error(err)
+	}
 }
 
 func AddCookie(kv map[string]string) {
@@ -125,7 +130,7 @@ func GetCookieStr() string {
 
 func CreateLogDeviceParam() url.Values {
 	webNo := strconv.Itoa(GetRand(5000, 7000))
-	UserAgent = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/98.0."+webNo+".109 Safari/537.36"
+	UserAgent = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/98.0." + webNo + ".109 Safari/537.36"
 	body, err := RequestGetWithoutJson("", "https://kyfw.12306.cn/otn/HttpZF/GetJS", nil)
 	if err != nil {
 		seelog.Error(err)
@@ -314,4 +319,25 @@ func reverse(token string) string {
 		a[i], a[j] = a[j], a[i]
 	}
 	return string(a)
+}
+
+func GetByChromdp() error {
+	ops := append(chromedp.DefaultExecAllocatorOptions[:],
+		chromedp.Flag("enable-automation", false),
+		chromedp.UserAgent(UserAgent))
+	allocCtx, _ := chromedp.NewExecAllocator(context.Background(), ops...)
+
+	ctx, _ := chromedp.NewContext(allocCtx, chromedp.WithLogf(seelog.Infof))
+
+	var chromCookieStr string
+	err := chromedp.Run(ctx, chromedp.Tasks{
+		chromedp.Navigate("https://www.12306.cn/index/"),
+		chromedp.EvaluateAsDevTools("document.cookie", &chromCookieStr),
+	})
+	if err != nil {
+		return err
+	}
+	AddCookieStr([]string{chromCookieStr})
+
+	return nil
 }
