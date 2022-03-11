@@ -11,18 +11,16 @@ import (
 	"time"
 )
 
-func IsLogin(reqFunc func(w http.ResponseWriter, r *http.Request)) func(w http.ResponseWriter, r *http.Request) {
+func IsLogin(w http.ResponseWriter, r *http.Request) {
 
-	return func(w http.ResponseWriter, r *http.Request) {
-		// 判断是否login
-		err := action.GetLoginData()
-		if err != nil {
-			utils.HTTPFailResp(w, http.StatusInternalServerError, 2, "not login", "")
-			return
-		}
-
-		reqFunc(w, r)
+	// 判断是否login
+	if !action.CheckLogin() {
+		utils.HTTPFailResp(w, http.StatusInternalServerError, 2, "not login", "")
+		return
 	}
+
+	utils.HTTPFailResp(w, http.StatusInternalServerError, 0, "login", "")
+	return
 }
 
 func CreateImageReq(w http.ResponseWriter, r *http.Request) {
@@ -97,10 +95,6 @@ func SearchTrain(w http.ResponseWriter, r *http.Request) {
 	}
 
 	utils.HTTPSuccResp(w, res)
-}
-
-func OrderView(w http.ResponseWriter, r *http.Request) {
-	fmt.Fprint(w, view.ViewHtml)
 }
 
 func StartOrderReq(w http.ResponseWriter, r *http.Request) {
@@ -194,7 +188,11 @@ func LoginView(w http.ResponseWriter, r *http.Request) {
 }
 
 func SendMsg(w http.ResponseWriter, r *http.Request) {
-	err := notice.SendWxrootMessage(utils.WxRobot, "车票购买成功")
+	if err := r.ParseForm(); err != nil {
+		fmt.Fprintf(w, "ParseForm() err: %v", err)
+		return
+	}
+	err := notice.SendWxrootMessage(r.FormValue("robot"), r.FormValue("msg"))
 	if err != nil {
 		utils.HTTPFailResp(w, http.StatusInternalServerError, 1, err.Error(), "")
 		return
@@ -204,37 +202,20 @@ func SendMsg(w http.ResponseWriter, r *http.Request) {
 }
 
 func StartHBReq(w http.ResponseWriter, r *http.Request) {
-	searchParam := &module.SearchParam{
-		TrainDate:       "2022-03-11",
-		FromStation:     "BJP",
-		ToStation:       "TJP",
-		FromStationName: "北京",
-		ToStationName:   "天津",
-		SeatType:        "M",
-	}
-
-	trains, err := action.GetTrainInfo(searchParam)
+	orderParam := new(module.OrderParam)
+	err := utils.EncodeParam(r, orderParam)
 	if err != nil {
 		utils.HTTPFailResp(w, http.StatusInternalServerError, 1, err.Error(), "")
 		return
 	}
 
-	var trainData *module.TrainData
-	for _, train := range trains {
-		if train.SeatInfo["一等座"] == "无" && train.IsCanNate == "1" {
-			trainData = train
-			break
-		}
-	}
-	fmt.Println(fmt.Sprintf("%+v", trainData))
-
-	err = action.AfterNateChechFace(trainData, searchParam)
+	err = action.AfterNateChechFace(orderParam.TrainData, orderParam.SearchParam)
 	if err != nil {
 		utils.HTTPFailResp(w, http.StatusInternalServerError, 1, err.Error(), "")
 		return
 	}
 
-	_, err = action.AfterNateSuccRate(trainData, searchParam)
+	_, err = action.AfterNateSuccRate(orderParam.TrainData, orderParam.SearchParam)
 	if err != nil {
 		utils.HTTPFailResp(w, http.StatusInternalServerError, 1, err.Error(), "")
 		return
@@ -246,7 +227,7 @@ func StartHBReq(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = action.AfterNateSubmitOrder(trainData, searchParam)
+	err = action.AfterNateSubmitOrder(orderParam.TrainData, orderParam.SearchParam)
 	if err != nil {
 		utils.HTTPFailResp(w, http.StatusInternalServerError, 1, err.Error(), "")
 		return
@@ -274,11 +255,11 @@ func StartHBReq(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	_, err = action.AfterNateConfirmHB(pgs, searchParam, trainData)
+	confirmHB, err := action.AfterNateConfirmHB(pgs, orderParam.SearchParam, orderParam.TrainData)
 	if err != nil {
 		utils.HTTPFailResp(w, http.StatusInternalServerError, 1, err.Error(), "")
 		return
 	}
 
-	utils.HTTPSuccResp(w, "候补成功")
+	utils.HTTPSuccResp(w, "候补成功, 订单号:" +confirmHB.Data.ReserveNo)
 }
