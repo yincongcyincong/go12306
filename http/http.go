@@ -130,7 +130,7 @@ func StartOrderReq(w http.ResponseWriter, r *http.Request) {
 	}
 	orderParam.Passengers = make([]*module.Passenger, 0)
 	for _, p := range passengers.Data.NormalPassengers {
-		if _, ok := orderParam.PassengerMap[p.PassengerName]; ok {
+		if _, ok := orderParam.PassengerMap[p.Alias]; ok {
 			orderParam.Passengers = append(orderParam.Passengers, p)
 		}
 	}
@@ -241,7 +241,12 @@ func StartHBReq(w http.ResponseWriter, r *http.Request) {
 		utils.HTTPFailResp(w, http.StatusInternalServerError, 1, err.Error(), "")
 		return
 	}
-	pgs := passengers.Data.NormalPassengers[:1]
+
+	for _, p := range passengers.Data.NormalPassengers {
+		if _, ok := orderParam.PassengerMap[p.Alias]; ok {
+			orderParam.Passengers = append(orderParam.Passengers, p)
+		}
+	}
 
 	err = action.PassengerInit()
 	if err != nil {
@@ -255,7 +260,7 @@ func StartHBReq(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	confirmHB, err := action.AfterNateConfirmHB(pgs, orderParam.SearchParam, orderParam.TrainData)
+	confirmHB, err := action.AfterNateConfirmHB(orderParam.Passengers, orderParam.SearchParam, orderParam.TrainData)
 	if err != nil {
 		utils.HTTPFailResp(w, http.StatusInternalServerError, 1, err.Error(), "")
 		return
