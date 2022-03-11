@@ -6,7 +6,6 @@ import (
 	"github.com/cihub/seelog"
 	"github.com/yincongcyincong/go12306/action"
 	"github.com/yincongcyincong/go12306/module"
-	"github.com/yincongcyincong/go12306/notice"
 	"github.com/yincongcyincong/go12306/utils"
 	"math"
 	"strings"
@@ -84,7 +83,7 @@ Search:
 	}
 
 	if *wxrobot != "" {
-		notice.SendWxrootMessage(*wxrobot, fmt.Sprintf("车次：%s 购买成功, 请登陆12306查看", trainData.TrainNo))
+		utils.SendWxrootMessage(*wxrobot, fmt.Sprintf("车次：%s 购买成功, 请登陆12306查看", trainData.TrainNo))
 	}
 	goto Reorder
 }

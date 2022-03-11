@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"github.com/yincongcyincong/go12306/action"
 	"github.com/yincongcyincong/go12306/module"
-	"github.com/yincongcyincong/go12306/notice"
 	"github.com/yincongcyincong/go12306/utils"
 	"github.com/yincongcyincong/go12306/view"
 	"net/http"
@@ -192,7 +191,7 @@ func SendMsg(w http.ResponseWriter, r *http.Request) {
 		fmt.Fprintf(w, "ParseForm() err: %v", err)
 		return
 	}
-	err := notice.SendWxrootMessage(r.FormValue("robot"), r.FormValue("msg"))
+	err := utils.SendWxrootMessage(r.FormValue("robot"), r.FormValue("msg"))
 	if err != nil {
 		utils.HTTPFailResp(w, http.StatusInternalServerError, 1, err.Error(), "")
 		return

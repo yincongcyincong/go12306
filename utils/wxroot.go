@@ -1,9 +1,8 @@
-package notice
+package utils
 
 import (
 	"encoding/json"
 	"errors"
-	"github.com/yincongcyincong/go12306/utils"
 )
 
 type WxRobotMsg struct {
@@ -29,7 +28,7 @@ func SendWxrootMessage(robot string, message string) error {
 	}
 
 	res := new(WxRobotRes)
-	err = utils.Request(string(msgBody),"", robot, res, map[string]string{"Content-Type": "application/json"})
+	err = Request(string(msgBody),"", robot, res, map[string]string{"Content-Type": "application/json"})
 	if err != nil {
 		return err
 	}
